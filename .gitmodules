@@ -7,3 +7,10 @@
 [submodule "realsense-ros-gazebo"]
 	path = realsense-ros-gazebo
 	url = https://github.com/rickstaa/realsense-ros-gazebo.git
+[submodule "Universal_Robots_ROS_Driver"]
+	path = Universal_Robots_ROS_Driver
+	url = https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git
+[submodule "universal_robot"]
+	path = universal_robot
+	url = https://github.com/ros-industrial/universal_robot.git
+	branch = melodic-devel
