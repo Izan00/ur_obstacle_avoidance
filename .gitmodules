@@ -1,6 +1,3 @@
-[submodule "dmp"]
-	path = dmp
-	url = https://github.com/sniekum/dmp
 [submodule "timed_roslaunch"]
 	path = timed_roslaunch
 	url = https://github.com/MoriKen254/timed_roslaunch
