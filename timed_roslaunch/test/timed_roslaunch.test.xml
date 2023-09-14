@@ -1,3 +1,0 @@
-<launch>
-  <include file="$(find timed_roslaunch)/launch/timed_roslaunch_test.launch" />
-</launch>
