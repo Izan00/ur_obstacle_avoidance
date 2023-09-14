@@ -4,3 +4,6 @@
 [submodule "dmp"]
 	path = dmp
 	url = https://github.com/abakisita/dmp.git
+[submodule "realsense-ros-gazebo"]
+	path = realsense-ros-gazebo
+	url = https://github.com/rickstaa/realsense-ros-gazebo.git
