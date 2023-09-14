@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- arguments for the urdf xacro file, rviz visualization and namespace -->
+  <arg name="name" default="camera"/>
+  <arg name="topics_ns" default=""/>
+  <arg name="add_plug" default="false"/>
+  <arg name="publish_pointcloud" default="true"/>
+  <arg name="model" default="$(find realsense2_description)/urdf/test_d435i_camera.urdf.xacro"/>
+  <arg name="tf_prefix" default=""/>
+  <arg name="start_gazebo" default="true" />
+  <arg name="rviz" default="true" />
+  <arg name="gui" default="true" />
+  <arg name="gazebo_model_name" default="robot"/>
+  <arg name="spawn_model" default="true"/>
+  <arg name="parent" default="camera_base_link" />
+  <arg name="parent_link" default="base_link" />
+  <arg name="use_cam_tool" default="false"/>
+<!--  
+  <node pkg="tf" type="static_transform_publisher" name="cam_tf" args="0 0 0 0 0 0 $(arg tf_prefix)base_link $(arg tf_prefix)camera_base_link 30" />
+-->    
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model) use_nominal_extrinsics:=true publish_pointcloud:=$(arg publish_pointcloud) add_plug:=$(arg add_plug) name:=$(arg name) topics_ns:=$(arg topics_ns) parent:=$(arg parent) parent_link:=$(arg parent_link) use_cam_tool:=$(arg use_cam_tool)" if="$(arg spawn_model)"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" if="$(arg spawn_model)">
+    <param name="publish_frequency" type="double" value="30.0" />
+  </node>
+
+  <!-- this will include the launch file for gazebo given the model -->
+  <include file="$(find realsense2_description)/launch/gazebo.launch">
+    <arg name="model" value="$(arg model)" />
+    <arg name="name" value="$(arg name)" />
+    <arg name="topics_ns" value="$(arg topics_ns)" />
+    <arg name="add_plug" value="$(arg add_plug)" />
+    <arg name="publish_pointcloud" value="$(arg publish_pointcloud)"/>
+    <arg name="start_gazebo" value="$(arg start_gazebo)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="gazebo_model_name" value="$(arg gazebo_model_name)"/>
+    <arg name="spawn_model" value="$(arg spawn_model)"/>
+    <arg name="parent" value="camera_base_link" />
+    <arg name="parent_link" value="base_link" />
+    <arg name="use_cam_tool" value="use_cam_tool"/>
+  </include>
+
+  <!-- loads rviz -->
+  <param name="use_gui" value="$(arg gui)" />
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find realsense2_description)/rviz/urdf.rviz" required="true" if="$(arg rviz)"/>
+
+</launch>
