@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-
-  <node pkg="tf" type="static_transform_publisher" name="cam_tf" args="-0.01 0 0.01 0 -1.5707 3.1415 tool0 camera_base_link 30" />
-
-</launch>
