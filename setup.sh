@@ -7,8 +7,10 @@ sudo apt-get install ros-noetic-ur-gazebo ros-noetic-ur3-moveit-config -y
 sudo apt-get install ros-noetic-ros-numpy
 sudo apt-get install ros-noetic-tf2-sensor-msgs
 sudo apt-get install python3-pcl -y
-pip install numpy==1.19.5
+pip install numpy==1.20.3
 pip install -U scikit-learn
+pip install open3d
+pip install pyvista
 
 #cd src/
 

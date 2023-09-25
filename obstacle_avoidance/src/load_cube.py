@@ -23,6 +23,9 @@ from sensor_msgs.msg import PointField
 import pcl
 from pcl import PointCloud
 
+import open3d as o3d
+import pyvista as pv
+
 def load_cube():
     # Define the path to your SDF model file (e.g., cube.sdf)
     model_path = rospy.get_param("~model_path", "package://obstacle_avoidance/models/cube.sdf")
@@ -32,7 +35,7 @@ def load_cube():
     
     # Set the pose of the cube
     cube_pose = Pose()
-    cube_pose.position.x = 0.2
+    cube_pose.position.x = 0.3
     cube_pose.position.y = 0.0
     cube_pose.position.z = 0.2  # Adjust the height as needed
     
@@ -75,7 +78,32 @@ def array_to_pointcloud(pc_array, intensity=1.0):
 
     return pc_msg
 
+def create_mesh(points):
+    print(points.shape)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(points)
+    o3d.visualization.draw_geometries([pcd])
+    pcd = pcd.voxel_down_sample(voxel_size=0.01)
+    o3d.visualization.draw_geometries([pcd])
+
+    dws_points = np.asarray(pcd.points)
+    print(dws_points.shape)
+    point_cloud = pv.PolyData(dws_points)
+    mesh = point_cloud.reconstruct_surface(nbr_sz=None,sample_spacing=None)
+    mesh.save('mesh.stl')
     
+    print('Mesh created')  
+    
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
+    mesh.plot(color='orange')
+
+    plt.savefig('mesh_plot.png')
+    print('figure saved')
+    time.sleep(100000000)
+    
+
 def pointCloudCallback(msg):
     try:
         # Look up the transformation from the source frame to the target frame
@@ -113,6 +141,9 @@ def pointCloudCallback(msg):
             cluster_indices = np.where(cluster_labels == label)[0]
             # Extract the cluster points
             cluster_points = pc_array[cluster_indices]
+            if cluster_points.shape[0]>5:
+                print('computing mesh')
+                create_mesh(cluster_points)
             cluster_pcl2 = array_to_pointcloud(cluster_points)
             cluster_msg = ros_numpy.msgify(PointCloud2, cluster_pcl2, stamp=msg.header.stamp, frame_id='base_link')
             cluster_publisher = rospy.Publisher('/clustered_pointcloud_'+str(i), PointCloud2, queue_size=1)
