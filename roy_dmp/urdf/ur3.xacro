@@ -19,6 +19,9 @@
   <!-- ur3 -->
   <xacro:include filename="$(find ur_gazebo)/urdf/ur.xacro"/>
 
+  <!-- base -->
+  <xacro:include filename="$(find roy_dmp)/urdf/base.xacro"/>
+
   <!-- camera -->
   <xacro:property name="use_cam" value="$(arg use_cam)"/>
 
