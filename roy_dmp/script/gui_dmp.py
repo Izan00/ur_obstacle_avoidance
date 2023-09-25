@@ -43,8 +43,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.stackedWidget.setCurrentIndex(0)
         self.ui.startButton.clicked.connect(self.start_click)
         self.ui.start_loadClasses_PB.clicked.connect(self.load_classes)
-        self.RviZ = RViz()
-        self.ui.gridLayout_6.addWidget(self.RviZ)
+        #self.RviZ = RViz() #TODO optimize to avoid crash
+        #self.ui.gridLayout_6.addWidget(self.RviZ)
         self.ui.Tab.currentChanged.connect(self.browse_recordings)
         self.ui.shutDownButton.clicked.connect(self.shutdown_click)
         self.ui.shutDownButton.setStyleSheet("background-color: red")
