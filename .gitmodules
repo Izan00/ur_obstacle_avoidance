@@ -14,3 +14,6 @@
 	path = universal_robot
 	url = https://github.com/ros-industrial/universal_robot.git
 	branch = melodic-devel
+[submodule "robot_self_filter"]
+	path = robot_self_filter
+	url = https://github.com/PR2/robot_self_filter.git
