@@ -4,6 +4,11 @@ sudo apt-get update
 sudo apt-get install ros-noetic-ddynamic-reconfigure -y
 sudo apt-get install ros-noetic-realsense2-camera -y
 sudo apt-get install ros-noetic-ur-gazebo ros-noetic-ur3-moveit-config -y
+sudo apt-get install ros-noetic-ros-numpy
+sudo apt-get install ros-noetic-tf2-sensor-msgs
+sudo apt-get install python3-pcl -y
+pip install numpy==1.19.5
+pip install -U scikit-learn
 
 #cd src/
 

@@ -10,6 +10,12 @@
             <size>0.1 0.1 0.1</size> <!-- Adjust the size of the cube here -->
           </box>
         </geometry>
+        <material>
+          <ambient>0 0 1 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <emissive>0 0 0 0</emissive>
+        </material>
       </visual>
       <collision name="collision">
         <geometry>
@@ -28,5 +34,6 @@
         </surface>
       </collision>
     </link>
+    
   </model>
 </sdf>
