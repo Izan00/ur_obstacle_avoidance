@@ -11,13 +11,13 @@
   <xacro:arg name="safety_pos_margin" default="0.15"/>
   <xacro:arg name="safety_k_position" default="20"/>
   
+  <xacro:arg name="obstacle_urdf" default="none"/>
   <xacro:arg name="use_cam" default="true"/>
   <xacro:arg name="use_cam_tool" default="false"/>
   <xacro:arg name="camera_urdf" default=""/>
 
   <!-- ur3 -->
   <xacro:include filename="$(find ur_gazebo)/urdf/ur.xacro"/>
-  
 
   <!-- camera -->
   <xacro:property name="use_cam" value="$(arg use_cam)"/>
@@ -33,4 +33,11 @@
     <xacro:include filename="$(arg camera_urdf)"/>
   </xacro:if>
  
+<!-- obstacle -->
+<xacro:property name="obstacle_urdf" value="$(arg obstacle_urdf)"/>
+  
+  <xacro:unless value="${obstacle_urdf == 'none'}">
+    <xacro:include filename="$(arg obstacle_urdf)"/>
+  </xacro:unless>
+  
 </robot>

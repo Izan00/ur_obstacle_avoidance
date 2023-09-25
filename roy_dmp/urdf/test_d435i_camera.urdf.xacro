@@ -25,7 +25,7 @@
     <joint name="cam_tool" type="fixed">
       <parent link="base_link"/>
       <child link="camera_base_link"/>
-      <origin xyz="0.5 0 0" rpy="0 0 0"/>
+      <origin xyz="0.5 0.5 0.5" rpy="0 0.75 -2.0"/>
     </joint>
   </xacro:unless>
   

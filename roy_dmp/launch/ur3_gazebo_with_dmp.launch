@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
 <launch>
 
+  <!--Obstacle parameters-->
+  <!--<arg name="obstacle_urdf" default="$(find roy_dmp)/urdf/cube.xacro" doc="Use 'none' for no obstacle"/>-->
+  <arg name="obstacle_urdf" default="none" doc="Use 'none' for no obstacle"/>
+  
   <!--Camera parameters and configuration-->
   <arg name="use_cam" default="true"/>
-  <arg name="use_cam_tool" default="true"/>
-  <arg name="publish_pointcloud" default="true"/>
+  <arg name="use_cam_tool" default="false"/>
+  <arg name="publish_pointcloud" default="false"/>
   <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/test_d435i_camera.urdf.xacro'"/>
 
   <!--Robot description and related parameter files -->
@@ -32,12 +36,12 @@
 
   <!-- Gazebo parameters -->
   <arg name="paused" default="false" doc="Starts Gazebo in paused mode" />
-  <arg name="gui" default="false" doc="Starts Gazebo gui" />
+  <arg name="gui" default="true" doc="Starts Gazebo gui" />
   <arg name="gazebo_model_name" default="robot"/>
   <arg name="start_gazebo" default="true"/>
   <arg name="gazebo_world" default="worlds/empty.world"/>
 
-  <!---->
+  <!--Rviz-->
   <arg name="rviz" default="true"/>
   <arg name="rviz_config" value="$(find roy_dmp)/resources/dmp_config.rviz"/>
 
@@ -55,7 +59,8 @@
     use_cam:=$(arg use_cam)
     use_cam_tool:=$(arg use_cam_tool)
     camera_urdf:=$(arg camera_urdf)
-    publish_pointcloud:=$(arg publish_pointcloud)"
+    publish_pointcloud:=$(arg publish_pointcloud)
+    obstacle_urdf:=$(arg obstacle_urdf)"
   />
 
   <!-- Robot state publisher -->
