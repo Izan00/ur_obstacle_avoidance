@@ -1,4 +1,10 @@
 <launch>
+    <node name="laser_filter" pkg="sensor_filters" type="pointcloud2_filter_chain" output="log">
+        <rosparam command="load" file="$(find obstacle_avoidance)/config/filter_realsense_d435.yaml" />
+        <remap from="~input" to="/camera/depth/color/points" />
+        <remap from="~output" to="/camera/depth/color/points_filtered" />
+    </node>
+
     <node name="load_cube_node" pkg="obstacle_avoidance" type="load_cube.py" output="screen">
         <param name="model_path" value="$(find obstacle_avoidance)/models/cube.sdf"/>
         <param name="model_name" value="my_cube"/>
