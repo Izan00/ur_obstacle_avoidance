@@ -577,6 +577,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         print('Executing plan')
         st = self.dmp_me.sendTrajectoryAction(self.path_plan,self.initial_JS,self.sim)
         print('Execute plan state: '+ str(st))
+        if not st:
+            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
+            self.ui.execute_plan_pushButton.setEnabled(False)
+        
     def collision_check(self):
         init_time_WP = time.time()
         initial_pose = self.initial_JS

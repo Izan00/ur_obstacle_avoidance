@@ -6,6 +6,7 @@ import rospy
 from moveit_msgs.msg import RobotState, RobotTrajectory, DisplayRobotState
 from trajectory_msgs.msg import JointTrajectoryPoint, JointTrajectory
 from moveit_msgs.msg._DisplayRobotState import DisplayRobotState
+from std_msgs.msg import Bool, Int32
 import time
 from moveit_msgs.srv import  GetPositionIK
 from tf.transformations import *
@@ -25,10 +26,7 @@ DEFAULT_JOINT_STATES = '/joint_states'
 EXECUTE_KNOWN_TRAJ_SRV = '/execute_kinematic_path'
 DEFAULT_IK_SERVICE = "/compute_ik"
 
-
 DEBUG_MODE =  True
-
-
 
 class motionExecution():
 
@@ -127,7 +125,26 @@ class motionExecution():
             print('Sending goal')
             client.send_goal(g)
             print('Goal sent')
-            client.wait_for_result(rospy.Duration(0))
+            
+            # Check if the action has finished
+            #client.wait_for_result(rospy.Duration(0))
+            safe_stop = 0
+            while not rospy.is_shutdown():
+                try:
+                    safe_stop = rospy.wait_for_message("/robot_safe_stop", Bool, timeout=0.10).data
+                except:
+                    pass    
+                if safe_stop:
+                    client.cancel_goal()
+                    print('Goal cancelled')
+                    return False
+                
+                result = client.get_result()
+                if result != 0:
+                    rospy.loginfo(f"Goal achieved: {result}")
+                    break  # Exit the loop when the action is completed
+
+
         except KeyboardInterrupt:
             client.cancel_goal()
             raise
