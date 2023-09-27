@@ -8,8 +8,8 @@
   <!--Camera parameters and configuration-->
   <arg name="use_cam" default="true"/>
   <arg name="use_cam_tool" default="false"/>
-  <arg name="publish_pointcloud" default="false"/>
-  <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/test_d435i_camera.urdf.xacro'"/>
+  <arg name="publish_pointcloud" default="true"/>
+  <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/test_d435_camera.urdf.xacro'"/>
 
   <!--Robot description and related parameter files -->
   <arg name="robot_model" default="ur3" />
@@ -36,7 +36,7 @@
 
   <!-- Gazebo parameters -->
   <arg name="paused" default="false" doc="Starts Gazebo in paused mode" />
-  <arg name="gui" default="true" doc="Starts Gazebo gui" />
+  <arg name="gui" default="false" doc="Starts Gazebo gui" />
   <arg name="gazebo_model_name" default="robot"/>
   <arg name="start_gazebo" default="true"/>
   <arg name="gazebo_world" default="worlds/empty.world"/>
