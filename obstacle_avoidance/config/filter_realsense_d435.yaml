@@ -8,16 +8,18 @@ cloud_filter_chain:
     type: robot_body_filter/RobotBodyFilterPointCloud2
     params:
       frames/sensor: 'camera_color_optical_frame'
-      filter/keep_clouds_organized: True
-      filter/do_clipping: True
+      filter/keep_clouds_organized: False
+      filter/do_clipping: False
       filter/do_contains_test: True
       filter/do_shadow_test: False
+      filter/model_pose_update_interval: 0.0
       sensor/point_by_point: False
       sensor/min_distance: 0.3
       sensor/max_distance: 5.0
       body_model/inflation/scale: 1.07
       body_model/inflation/padding: 0.01
       body_model/robot_description_param: '/robot_description'
+      only_links: ['base_link_inertia','shoulder_link','upper_arm_link', 'forearm_link','wrist_1_link','wrist_2_link','wrist_3_link','base_plate']
       transforms/buffer_length: 15.0
       transforms/timeout/reachable: 0.2
       transforms/timeout/unreachable: 0.2
@@ -30,3 +32,4 @@ cloud_filter_chain:
       debug/pcl/shadow: False
       debug/marker/contains: False
       debug/marker/shadow: False
+      debug/marker/bounding_box: False
