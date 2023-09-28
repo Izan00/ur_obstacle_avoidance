@@ -12,6 +12,9 @@
       <geometry>
           <box size="${size} ${size} ${size}"/>
       </geometry>
+      <material name="cube_blue">
+          <color rgba="0 0 1 1"/>
+      </material>
     </visual>
     <collision>
     <origin xyz="${size/2.0} ${size/2.0} ${size/2.0}"/>
@@ -20,9 +23,6 @@
       </geometry>
     </collision>
     </link>
-    <gazebo reference="cube0">
-      <material>Gazebo/Blue</material>
-    </gazebo>
     <joint name="cube0_joint" type="fixed">
       <parent link="base_link" />
       <child link = "cube0" />

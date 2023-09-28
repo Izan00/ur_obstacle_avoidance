@@ -39,7 +39,7 @@
   <arg name="gui" default="false" doc="Starts Gazebo gui" />
   <arg name="gazebo_model_name" default="robot"/>
   <arg name="start_gazebo" default="true"/>
-  <arg name="gazebo_world" default="worlds/empty.world"/>
+  <arg name="gazebo_world" default="$(find roy_dmp)/resources/empty.world"/> <!--worlds/empty.world-->
 
   <!--Rviz-->
   <arg name="rviz" default="true"/>
