@@ -55,10 +55,11 @@ def array_to_pointcloud(pc_array, intensity=1.0):
         ('z', np.float32),
         ('intensity', np.float32),
     ])
-    pc_msg['x'] = pc_array[:, 0]
-    pc_msg['y'] = pc_array[:, 1]
-    pc_msg['z'] = pc_array[:, 2]
-    pc_msg['intensity'] = np.ones(pc_array.shape[0])*intensity
+    if pc_array.shape[0] != 0:
+        pc_msg['x'] = pc_array[:, 0]
+        pc_msg['y'] = pc_array[:, 1]
+        pc_msg['z'] = pc_array[:, 2]
+        pc_msg['intensity'] = np.ones(pc_array.shape[0])*intensity
 
     return pc_msg
 
@@ -256,17 +257,24 @@ def movement_check(centroids):
         5.if same resume move, else ask for path check again
     ''' 
     
-def pointCloudCallback(msg):
-    try:
-        # Look up the transformation from the source frame to the target frame
-        transform = tf_buffer.lookup_transform('base_link', msg.header.frame_id, rospy.Time(0), rospy.Duration(1.0))
-    except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-        rospy.logwarn("Transform not available!")
-        return
+def pointCloudCallback(pcl_msg):
+    if not pcl_msg.header.frame_id == 'base_link':
+        try:
+            # Look up the transformation from the source frame to the target frame
+            transform = tf_buffer.lookup_transform('base_link', pcl_msg.header.frame_id, rospy.Time(0), rospy.Duration(1.0))
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logwarn("Transform not available!")
+            return
 
-    # Apply the transformation to the PointCloud
-    transformed_pcl_pc = tf2_sensor_msgs.do_transform_cloud(msg, transform)
-    
+        # Apply the transformation to the PointCloud
+        transformed_pcl_pc = tf2_sensor_msgs.do_transform_cloud(pcl_msg, transform)
+    else:
+        transformed_pcl_pc = pcl_msg
+
+    #sor = transformed_pcl_pc.make_voxel_grid_filter()
+    #sor.set_leaf_size(0.01, 0.01, 0.01)
+    #filtered_pcl_pc= sor.filter()
+
     pc_list = []
     pcg_list = []
     for point in point_cloud2.read_points(transformed_pcl_pc, skip_nans=True):
@@ -276,49 +284,43 @@ def pointCloudCallback(msg):
         else:
             pcg_list.append( [point[0],point[1],point[2]] )
     
-    #print(len(pc_list))
-    #print(len(pcg_list))
+    if len(pc_list) > 0:
 
-    pc_array = np.array(pc_list)
-    pcg_array = np.array(pcg_list)
+        pc_array = np.array(pc_list)
+        pcg_array = np.array(pcg_list)
 
-    pc_pcl2 = array_to_pointcloud(pc_array)
-    no_ground_msg = ros_numpy.msgify(PointCloud2, pc_pcl2, stamp=msg.header.stamp, frame_id='base_link')
-    #no_ground_publisher.publish(no_ground_msg)
+        pc_pcl2 = array_to_pointcloud(pc_array)
 
-    cluster_labels = create_clusters(pc_array)
+        no_ground_msg = ros_numpy.msgify(PointCloud2, pc_pcl2, stamp=pcl_msg.header.stamp, frame_id='base_link')
+        #no_ground_publisher.publish(no_ground_msg)
 
-    centroids = []
+        cluster_labels = create_clusters(pc_array)
 
-    for i,label in enumerate(np.unique(cluster_labels)):
-        cluster_indices = np.where(cluster_labels == label)[0]
-        # Extract the cluster points
-        cluster_points = pc_array[cluster_indices]
-        if cluster_points.shape[0]>=100: #TODO define threshold as var
-            #print(cluster_points.shape)
-            
-            centroid = np.mean(cluster_points, axis=0)
-            centroids.append(centroid)
-            
-            # Surface publish
-            #create_mesh(cluster_points)
-            #publish_mesh_marker()
-            #create_urdf()
-            #load_urdf()
+        centroids = []
 
-        movement_check(centroids)
-        publish_centroid_marker(centroids)
+        for i,label in enumerate(np.unique(cluster_labels)):
+            cluster_indices = np.where(cluster_labels == label)[0]
+            # Extract the cluster points
+            cluster_points = pc_array[cluster_indices]
+            if cluster_points.shape[0]>=100: #TODO define threshold as var
+                #print(cluster_points.shape)
+                
+                centroid = np.mean(cluster_points, axis=0)
+                centroids.append(centroid)
+                
+                # Surface publish
+                #create_mesh(cluster_points)
+                #publish_mesh_marker()
+                #create_urdf()
+                #load_urdf()
 
-        #cluster_pcl2 = array_to_pointcloud(cluster_points)
-        #cluster_msg = ros_numpy.msgify(PointCloud2, cluster_pcl2, stamp=msg.header.stamp, frame_id='base_link')
-        #cluster_publisher = rospy.Publisher('/clustered_pointcloud_'+str(i), PointCloud2, queue_size=1)
-        #cluster_publisher.publish(cluster_msg)
+            movement_check(centroids)
+            publish_centroid_marker(centroids)
 
-    #print('msg published')
-
-    #time.sleep(100000000)
-    #exit()
-    #print('pointcloud received')
+            #cluster_pcl2 = array_to_pointcloud(cluster_points)
+            #cluster_msg = ros_numpy.msgify(PointCloud2, cluster_pcl2, stamp=pcl_msg.header.stamp, frame_id='base_link')
+            #cluster_publisher = rospy.Publisher('/clustered_pointcloud_'+str(i), PointCloud2, queue_size=1)
+            #cluster_publisher.publish(cluster_msg)
 
 if __name__ == '__main__':
     
