@@ -820,7 +820,7 @@ class Ui_MainWindow(object):
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Author: Roy Ove Eriksen</p>\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Date: Autumn 2020</p></body></html>"))
         self.RobotIPLabel.setText(_translate("MainWindow", "Robot IP:"))
-        self.IPLineEdit.setPlaceholderText(_translate("MainWindow", "192.168.1.128"))
+        self.IPLineEdit.setPlaceholderText(_translate("MainWindow", "10.10.73.234"))
         self.simulationCheckBox.setText(_translate("MainWindow", "Simulation"))
         self.label.setText(_translate("MainWindow", "Robots:"))
         self.ChooseRobotcomboBox.setItemText(0, _translate("MainWindow", "UR3"))

@@ -13,6 +13,7 @@
   
   <xacro:arg name="obstacle_urdf" default="none"/>
   <xacro:arg name="use_cam" default="true"/>
+  <xacro:arg name="sim_cam" default="true"/>
   <xacro:arg name="use_cam_tool" default="false"/>
   <xacro:arg name="camera_urdf" default=""/>
 
@@ -24,7 +25,7 @@
 
   <!-- camera -->
   <xacro:property name="use_cam" value="$(arg use_cam)"/>
-
+  <xacro:property name="sim_cam" value="$(arg sim_cam)"/>
   <xacro:if value="${use_cam}">
     <xacro:arg name="name" default="camera" />
     <xacro:arg name="topics_ns" default="camera" />
@@ -32,8 +33,12 @@
     <xacro:arg name="publish_pointcloud" default="true" />
     <xacro:arg name="add_plug" default="false" />
     <xacro:arg name="parent" default="camera_base_link" />
-    
-    <xacro:include filename="$(arg camera_urdf)"/>
+    <xacro:if value="${sim_cam}">
+    	<xacro:include filename="$(arg camera_urdf)"/>
+    </xacro:if>
+    <xacro:unless value="${sim_cam}">
+    	<xacro:include filename="$(find roy_dmp)/urdf/d435_camera.urdf.xacro"/>
+    </xacro:unless>
   </xacro:if>
  
 <!-- obstacle -->
