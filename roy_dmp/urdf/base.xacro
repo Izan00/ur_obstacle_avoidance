@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <robot name="base_plate" xmlns:xacro="http://ros.org/wiki/xacro">
 
-<link name="base_plate">
+  <link name="base_plate">
     <visual>
-    <origin xyz="0 0 -0.01"/>
+      <origin xyz="0 0 -0.01"/>
       <geometry>
           <box size="1.0 1.0 0.02"/>
       </geometry>
@@ -12,54 +12,73 @@
       </material>
     </visual>
     <collision>
-    <origin xyz="0 0 -0.01"/>
+      <origin xyz="0 0 -0.01"/>
       <geometry>
         <box size="1.0 1.0 0.02"/>
       </geometry>
     </collision>
-    </link>
-    <joint name="base_joint" type="fixed">
-      <parent link="base_link" />
-      <child link = "base_plate" />
-      <origin xyz="0 0 0" rpy="0 0 0" />
-    </joint>
-    </robot>
+  </link>
+  <joint name="base_joint" type="fixed">
+    <parent link="base_link" />
+    <child link = "base_plate" />
+    <origin xyz="0.3 0 0" rpy="0 0 0" />
+  </joint>
 
-<!-- <xacro:macro name="cube" params="">
-
-<xacro:property name="size" value="0.1"/>
-
-  <link name="cube_link">
-    <inertial>
-      <origin xyz="${size/2.0} ${size/2.0} ${size/2.0}" />
-      <mass value="1.0" />
-      <inertia  ixx="1.0" ixy="0.0"  ixz="1.0"  iyy="1.0"  iyz="1.0"  izz="1.0" />
-    </inertial>
-    <visual>
-      <origin xyz="${size/2.0} ${size/2.0} ${size/2.0}"/>
-      <geometry>
-        <box size="${size} ${size} ${size}" />
-      </geometry>
-    </visual>
+  <!-- Virtual safety walls -->
+  <link name="wall1_link">
     <collision>
-      <origin xyz="${size/2.0} ${size/2.0} ${size/2.0}"/>
+      <origin xyz="0 0 0"/>
       <geometry>
-        <box size="${size} ${size} ${size}" />
+        <box size="1.0 1.0 0.02"/>
       </geometry>
     </collision>
   </link>
-  
-  <gazebo reference="cube">
-  <material>Gazebo/Blue</material>
-  </gazebo>
-
-
-  </xacro:macro>
-  
-    <joint name="cube_joint" type="fixed">
-      <parent link="base_link"/>
-      <child link="cube_link"/>
-      <origin xyz="0.2 0.2 0.2" rpy="0 0.0 0.0"/>
+  <joint name="wall1_joint" type="fixed">
+    <parent link="base_plate" />
+    <child link = "wall1_link" />
+    <origin xyz="0 -0.5 0.48" rpy="1.57079632679 0 0" />
   </joint>
 
--->
+  <link name="wall2_link">
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="1.0 1.0 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wall2_joint" type="fixed">
+    <parent link="base_plate" />
+    <child link = "wall2_link" />
+    <origin xyz="0.5 0 0.48" rpy="1.57079632679 0 1.57079632679" />
+  </joint>
+
+  <link name="wall3_link">
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="1.0 1.0 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wall3_joint" type="fixed">
+    <parent link="base_plate" />
+    <child link = "wall3_link" />
+    <origin xyz="0 0.5 0.48" rpy="1.57079632679 0 0" />
+  </joint>
+
+  <link name="wall4_link">
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="1.0 1.0 0.02"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="wall4_joint" type="fixed">
+    <parent link="base_plate" />
+    <child link = "wall4_link" />
+    <origin xyz="-0.5 0 0.48" rpy="1.57079632679 0 1.57079632679" />
+  </joint>
+
+</robot>
