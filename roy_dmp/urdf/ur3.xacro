@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="https://ros.org/wiki/xacro" name="$(arg robot_model)_cam_robot">
-
   <!--Declare arguments -->
   <xacro:arg name="joint_limit_params" default=""/>
   <xacro:arg name="physical_params" default=""/>
@@ -19,6 +18,9 @@
 
   <!-- ur3 -->
   <xacro:include filename="$(find ur_gazebo)/urdf/ur.xacro"/>
+
+  <!-- tool -->
+  <xacro:include filename="$(find roy_dmp)/urdf/tool.xacro"/>
 
   <!-- base -->
   <xacro:include filename="$(find roy_dmp)/urdf/base.xacro"/>
