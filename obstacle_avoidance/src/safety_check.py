@@ -31,7 +31,7 @@ from std_msgs.msg import Bool
 tf_listener = None
 saved_centroids = []
 still_count = 0
-
+movement = 0
 remove_ground = True
 
 
@@ -225,23 +225,26 @@ def publish_centroid_marker(centroids):
         marker_centroid_publisher.publish(marker_array)
 
 def movement_check(centroids):
-    global still_count
-    movement = 0
+    global still_count, saved_centroids, movement
+    movement_prev = movement
+    print(centroids)
+    print(saved_centroids)
     for saved_centroid in saved_centroids:
         movement+=np.min(np.linalg.norm(np.array(centroids) - saved_centroid, axis=1))
+        print('dist: ',np.linalg.norm(np.array(centroids) - saved_centroid, axis=1))
     print('Movement:',movement)
 
     # Check if workspace is still
-    if movement<0.1:
+    if abs(movement-movement_prev)<0.01:
         still_count += 1
     else: 
         still_count = 0
 
     safe_stop_msg = Bool()
-
+    print('Still:',still_count)
     # Check if workspace is still for some time
-    if still_count == 5:
-        saved_centroid = centroids
+    if still_count == 10:
+        saved_centroids = centroids
     elif still_count > 5:
         safe_stop_msg.data = False
     else:
