@@ -36,7 +36,7 @@
     <xacro:arg name="add_plug" default="false" />
     <xacro:arg name="parent" default="camera_base_link" />
     <xacro:if value="${sim_cam}">
-    	<xacro:include filename="$(arg camera_urdf)"/>
+    <xacro:include filename="$(arg camera_urdf)"/>
     </xacro:if>
     <xacro:unless value="${sim_cam}">
     	<xacro:include filename="$(find roy_dmp)/urdf/d435_camera.urdf.xacro"/>
