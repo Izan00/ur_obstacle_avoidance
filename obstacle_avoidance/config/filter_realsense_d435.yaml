@@ -17,9 +17,9 @@ cloud_filter_chain:
       filter/do_shadow_test: False
       filter/model_pose_update_interval: 0.0
       sensor/point_by_point: False
-      sensor/min_distance: 0.3
-      sensor/max_distance: 5.0
-      body_model/inflation/scale: 1.07
+      sensor/min_distance: 0.0
+      sensor/max_distance: 100.0
+      body_model/inflation/scale: 2.0 #1.07
       body_model/inflation/padding: 0.01
       body_model/robot_description_param: '/robot_description'
       only_links: ['base_link_inertia','shoulder_link','upper_arm_link', 'forearm_link','wrist_1_link','wrist_2_link','wrist_3_link','base_plate','tool_claw']
@@ -28,11 +28,11 @@ cloud_filter_chain:
       transforms/timeout/unreachable: 0.2
       bounding_sphere/compute: False
       bounding_box/compute: False
-      oriented_bounding_box/compute: False
+      oriented_bounding_box/compute: True
       local_bounding_box/compute: False
       debug/pcl/inside: False
       debug/pcl/clip: False
       debug/pcl/shadow: False
       debug/marker/contains: False
       debug/marker/shadow: False
-      debug/marker/bounding_box: False
+      debug/marker/bounding_box: True
