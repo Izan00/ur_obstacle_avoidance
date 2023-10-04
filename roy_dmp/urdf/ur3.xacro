@@ -16,11 +16,16 @@
   <xacro:arg name="use_cam_tool" default="false"/>
   <xacro:arg name="camera_urdf" default=""/>
 
+  <xacro:property name="M_PI" value="3.14159265359" />
+  <xacro:property name="robot_prefix" value=""/>
+
   <!-- ur3 -->
   <xacro:include filename="$(find ur_gazebo)/urdf/ur.xacro"/>
 
-  <!-- tool -->
-  <xacro:include filename="$(find roy_dmp)/urdf/tool.xacro"/>
+  <!-- rg2 gripper -->
+  <!--<xacro:include filename="$(find roy_dmp)/urdf/tool.xacro"/>-->
+  <xacro:include filename="$(find roy_dmp)/urdf/rg2.urdf.xacro" />
+  <xacro:rg2 prefix="${robot_prefix}"/>
 
   <!-- base -->
   <xacro:include filename="$(find roy_dmp)/urdf/base.xacro"/>
