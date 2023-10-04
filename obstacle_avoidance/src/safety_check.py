@@ -29,8 +29,9 @@ from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Bool
 
 tf_listener = None
-saved_centroids = []
+prev_centroids = []
 still_count = 0
+still = True
 movement = 0
 remove_ground = True
 
@@ -202,7 +203,7 @@ def publish_centroid_marker(centroids):
         marker.scale.x = 0.1  # Set the scale of the mesh
         marker.scale.y = 0.1  # Set the scale of the mesh
         marker.scale.z = 0.1  # Set the scale of the mesh
-        marker.lifetime = rospy.Duration()
+        marker.lifetime = rospy.Duration(0.5)
         marker.id = id
         # Set the color (RGBA) of the marker
         marker.color.r = 1.0
@@ -225,27 +226,37 @@ def publish_centroid_marker(centroids):
         marker_centroid_publisher.publish(marker_array)
 
 def movement_check(centroids):
-    global still_count, saved_centroids, movement
-    movement_prev = movement
+    global still_count, prev_centroids, movement, still
+
+    if prev_centroids == []:
+        prev_centroids = centroids
+
     print(centroids)
-    print(saved_centroids)
-    for saved_centroid in saved_centroids:
-        movement+=np.min(np.linalg.norm(np.array(centroids) - saved_centroid, axis=1))
-        print('dist: ',np.linalg.norm(np.array(centroids) - saved_centroid, axis=1))
+    print(prev_centroids)
+
+    for prev_centroid in prev_centroids:
+        movement+=np.min(np.linalg.norm(np.array(centroids) - prev_centroid, axis=1))
+        print('dist: ',np.linalg.norm(np.array(centroids) - prev_centroid, axis=1))
     print('Movement:',movement)
 
+    prev_centroids = centroids
+
     # Check if workspace is still
-    if abs(movement-movement_prev)<0.01:
-        still_count += 1
-    else: 
+    if still_count>5:
+        if abs(movement)<0.01:
+            still = True
+        else:
+            still= False
         still_count = 0
+        movement = 0
+    else:
+        still_count += 1
+
+    print('Still:', still)
 
     safe_stop_msg = Bool()
-    print('Still:',still_count)
-    # Check if workspace is still for some time
-    if still_count == 10:
-        saved_centroids = centroids
-    elif still_count > 5:
+
+    if still:
         safe_stop_msg.data = False
     else:
         safe_stop_msg.data = True
