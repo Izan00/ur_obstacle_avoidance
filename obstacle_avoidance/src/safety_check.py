@@ -28,6 +28,14 @@ import pymeshfix
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import Bool
 
+import sys
+import rospy
+import moveit_commander
+from moveit_msgs.msg import CollisionObject
+from moveit_msgs.msg import PlanningScene, ObjectColor
+from geometry_msgs.msg import Pose, PoseStamped
+from shape_msgs.msg import SolidPrimitive, Mesh
+
 tf_listener = None
 prev_centroids = []
 still_count = 0
@@ -48,6 +56,37 @@ def create_clusters(X):
     #print("Estimated number of clusters: %d" % n_clusters_)
 
     return labels
+
+def add_collision_object(object_name, object_pose, object_size):
+
+    collision_object = CollisionObject()
+    collision_object.header.frame_id = robot.get_planning_frame()
+    collision_object.id = object_name
+
+    primitive = SolidPrimitive()
+    primitive.type = SolidPrimitive.BOX
+    primitive.dimensions = object_size
+
+    object_pose_stamped = PoseStamped()
+    object_pose_stamped.header.frame_id = robot.get_planning_frame()
+    object_pose_stamped.pose = object_pose
+
+    collision_object.meshes.append('mesh.stl')
+    collision_object.mesh_poses.append(object_pose_stamped.pose)
+    #collision_object.primitives.append(primitive)
+    #collision_object.primitive_poses.append(object_pose_stamped.pose)
+
+    collision_object.operation = CollisionObject.ADD
+
+    #scene.add_box(object_name, object_pose_stamped, size=object_size)
+    scene.add_mesh(object_name, object_pose_stamped, 'mesh.stl')
+    
+    # Publish collision object marker for visualization in RViz
+    planning_scene = PlanningScene()
+    planning_scene.world.collision_objects.append(collision_object)
+    planning_scene.is_diff = True
+    marker_pub.publish(planning_scene)
+
 
 def array_to_pointcloud(pc_array, intensity=1.0):
     pc_msg = np.zeros(pc_array.shape[0], dtype=[
@@ -121,9 +160,9 @@ def create_mesh(points):
     #print(points.shape)
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(points)
-    o3d.visualization.draw_geometries([pcd])
+    #o3d.visualization.draw_geometries([pcd])
     pcd = pcd.voxel_down_sample(voxel_size=0.01) #0.02
-    o3d.visualization.draw_geometries([pcd])
+    #o3d.visualization.draw_geometries([pcd])
 
     #radius = 3*0.01
     #bpa_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd,o3d.utility.DoubleVector([radius, radius * 2]))
@@ -136,7 +175,7 @@ def create_mesh(points):
     #mesh.plot(show_edges=True)
     
     mesh = point_cloud.delaunay_2d(alpha=0.06).clean() #0.04
-    mesh.plot(show_edges=True)
+    #mesh.plot(show_edges=True)
 
     #mesh = point_cloud.delaunay_3d(alpha=0.02, progress_bar=False).extract_surface().triangulate()#.clean()
     #mesh.plot(show_edges=True)
@@ -150,11 +189,12 @@ def create_mesh(points):
     fixer.mesh.plot()
     mesh = fixer.mesh 
     '''
-    mesh.flip_normal([1.0, 1.0, -1.0], transform_all_input_vectors=True, inplace=True)
+    #mesh.flip_normal([1.0, 1.0, -1.0], transform_all_input_vectors=True, inplace=True)
 
     mesh.save('mesh.stl')
 
     print('Mesh created')  
+    #return cloud_mesh
     
 def publish_mesh_marker():
     marker = Marker()
@@ -323,7 +363,24 @@ def pointCloudCallback(pcl_msg):
                 centroids.append(centroid)
                 
                 # Surface publish
-                #create_mesh(cluster_points)
+                create_mesh(cluster_points)
+
+                # Define collision object parameters
+                object_name = 'cluster_'+str(i)
+                object_pose = Pose()
+                object_pose.position.x = 0.0
+                object_pose.position.y = 0.0
+                object_pose.position.z = 0.0
+                object_pose.orientation.x = 0
+                object_pose.orientation.y = 0
+                object_pose.orientation.z = 0
+                object_pose.orientation.w = 1
+
+                object_size = [0.1, 0.1, 0.1]  # Dimensions of the cube
+
+                # Add collision object to the planning scene
+                add_collision_object(object_name, object_pose, object_size)
+        
                 #publish_mesh_marker()
                 #create_urdf()
                 #load_urdf()
@@ -349,5 +406,14 @@ if __name__ == '__main__':
 
     tf_buffer = tf2_ros.Buffer()
     tf_listener = tf2_ros.TransformListener(tf_buffer)
+
+    moveit_commander.roscpp_initialize(sys.argv)
+    scene = moveit_commander.PlanningSceneInterface()
+    robot = moveit_commander.RobotCommander()
+    group_name = "manipulator"  # Replace with your planning group
+    group = moveit_commander.MoveGroupCommander(group_name)
+
+    marker_pub = rospy.Publisher('collision_object_marker', PlanningScene, queue_size=10)
+
 
     rospy.spin()
