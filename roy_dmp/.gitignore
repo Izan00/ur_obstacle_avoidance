@@ -1,2 +1,3 @@
 *.pyc
-
+data/weights/old/*
+data/rosbag_recordings/old/*
