@@ -154,8 +154,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.IP = '10.10.73.234'
         self.sim = False
         self.process = QProcess(self)
-        #self.linkName = "rg2_eef_link"
-        self.linkName = "tool0"
+        self.linkName = "rg2_eef_link"
         #Param Recording page
         self.dmp_record = 0  # 0 for EE, 1 for JS, 2 for JS with Filtering
         self.dmp_record_name = "No_name"

@@ -174,7 +174,7 @@ class motionExecution():
 
     def pathPublish(self,_path,_linkName):
         imitated_path = Path()
-        imitated_path.header.frame_id = "/base_link"
+        imitated_path.header.frame_id = "base_link"
         for itr in range(len(_path.plan.points)):
             joint_positions = _path.plan.points[itr].positions
             path = self.fkPath(joint_positions,_linkName)
