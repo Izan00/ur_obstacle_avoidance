@@ -151,7 +151,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # Front page params
         self.robot = 'roslaunch roy_dmp ur3_with_dmp.launch'
-        self.IP = '10.10.73.234'
+        self.IP = '10.10.73.235' #TODO repair getting IP from GUI
         self.sim = False
         self.process = QProcess(self)
         self.linkName = "rg2_eef_link"
