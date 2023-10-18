@@ -16,6 +16,8 @@
   <xacro:arg name="use_cam_tool" default="false"/>
   <xacro:arg name="camera_urdf" default=""/>
 
+  <xacro:arg name="sim" default="false" />
+
   <xacro:property name="M_PI" value="3.14159265359" />
   <xacro:property name="robot_prefix" value=""/>
 

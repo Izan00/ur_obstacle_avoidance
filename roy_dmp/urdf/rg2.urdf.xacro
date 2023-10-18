@@ -2,6 +2,7 @@
 <!-- xacro for rg2 mounted on the manipulator -->
 
 <robot name="rg2" xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="M_PI" value="3.14159265359" />
   <xacro:macro name="rg2" params="prefix">
     <!--TODO remove screws from tool collision stl-->
     <!-- rg2 joint -->
