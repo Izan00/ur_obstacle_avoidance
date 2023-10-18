@@ -9,7 +9,7 @@
   <arg name="sim_cam" default="false"/>
   <arg name="use_cam_tool" default="false"/>
   <arg name="publish_pointcloud" default="true"/>
-  <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/test_d435_camera.urdf.xacro'"/>
+  <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/d435_camera.urdf.xacro'"/>
 
 
   <!--Robot description and related parameter files -->

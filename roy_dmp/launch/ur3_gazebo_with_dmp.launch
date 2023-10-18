@@ -7,9 +7,10 @@
   
   <!--Camera parameters and configuration-->
   <arg name="use_cam" default="true"/>
+  <arg name="sim_cam" default="false"/>
   <arg name="use_cam_tool" default="false"/>
   <arg name="publish_pointcloud" default="true"/>
-  <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/test_d435_camera.urdf.xacro'"/>
+  <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/d435_camera.urdf.xacro'"/>
 
   <!--Robot description and related parameter files -->
   <arg name="robot_model" default="ur3" />
@@ -56,6 +57,8 @@
     safety_limits:=$(arg safety_limits)
     safety_pos_margin:=$(arg safety_pos_margin)
     safety_k_position:=$(arg safety_k_position)
+    sim:=true
+    sim_cam:=$(arg sim_cam)
     use_cam:=$(arg use_cam)
     use_cam_tool:=$(arg use_cam_tool)
     camera_urdf:=$(arg camera_urdf)
@@ -80,6 +83,7 @@
     <arg name="gazebo_model_name" value="$(arg gazebo_model_name)"/>
     <arg name="start_gazebo" value="$(arg start_gazebo)"/>
     <arg name="gazebo_world" value="$(arg gazebo_world)"/>
+    <arg name="spawn_z" default="0"/>
   </include>
 
   <!--Start planning executor-->
