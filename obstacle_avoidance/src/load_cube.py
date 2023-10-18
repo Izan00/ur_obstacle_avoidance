@@ -16,9 +16,9 @@ def move_cube(model_name):
     model_state.model_name = model_name  # Replace with the name of your cube model
     print('Moving')
     for i in range(10):
-        model_state.pose.position.x = 0.3  
-        model_state.pose.position.y = 0.0+0.025*i  
-        model_state.pose.position.z = 0.2+0.025*i
+        model_state.pose.position.x = 0.0  
+        model_state.pose.position.y = 0.5+0.05*i  
+        model_state.pose.position.z = 0.1+0.05*i
 
         # Send the new model state to Gazebo
         try:
@@ -46,9 +46,9 @@ def load_cube(model_name):
     
     # Set the pose of the cube
     cube_pose = Pose()
-    cube_pose.position.x = 0.3
-    cube_pose.position.y = 0.0
-    cube_pose.position.z = 0.2  # Adjust the height as needed
+    cube_pose.position.x = 0.0
+    cube_pose.position.y = 0.5
+    cube_pose.position.z = 0.1  # Adjust the height as needed
     
     # Load the model
     print('Wainting gazebo')

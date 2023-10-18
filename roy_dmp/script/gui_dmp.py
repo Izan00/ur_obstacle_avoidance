@@ -21,6 +21,7 @@ from dmp_execute import *
 import numpy as np
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
+from std_msgs.msg import Bool
 
 def get_joints():
     
@@ -33,6 +34,9 @@ def get_joints():
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
+        
+        rospy.Subscriber("/robot_safe_stop", Bool,self.safe_stop_callback)
+
         super(ApplicationWindow, self).__init__()
 
         self.ui = Ui_MainWindow()
@@ -579,7 +583,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if not st:
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
             self.ui.execute_plan_pushButton.setEnabled(False)
-        
+
     def collision_check(self):
         init_time_WP = time.time()
         initial_pose = self.initial_JS
@@ -615,7 +619,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             print("not ok")
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
             self.ui.execute_plan_pushButton.setEnabled(False)
-        
+            
+    def safe_stop_callback(self, msg):
+        safe_stop=msg.data
+        if safe_stop:
+            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
+            self.ui.execute_plan_pushButton.setEnabled(False)
+
 class RViz(QWidget ):
 
     def __init__(self):
@@ -639,7 +649,6 @@ class RViz(QWidget ):
         layout.addLayout( h_layout )
         self.setLayout( layout )
 
-        
 
 
 def main():

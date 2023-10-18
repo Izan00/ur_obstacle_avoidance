@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 
 from numpy.core.numeric import _full_like_dispatcher
@@ -6,7 +6,6 @@ import rospy
 from moveit_msgs.msg import RobotState, RobotTrajectory, DisplayRobotState
 from trajectory_msgs.msg import JointTrajectoryPoint, JointTrajectory
 from moveit_msgs.msg._DisplayRobotState import DisplayRobotState
-from std_msgs.msg import Bool, Int32
 import time
 from moveit_msgs.srv import  GetPositionIK
 from tf.transformations import *
@@ -15,9 +14,11 @@ from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 import sys
 import os
-sys.path.append(os.getcwd()+"/src/roy_dmp/src")
+path = os.path.join(os.getcwd(),'src/roy_dmp/include/roy_dmp')
+print(path)
+sys.path.append(path)
 from kinematics_interface import *
-import roslib#; roslib.load_manifest('ur_driver')
+import roslib; #roslib.load_manifest('ur_driver')
 import actionlib
 from trajectory_msgs.msg import *
 from math import pi
@@ -26,7 +27,10 @@ DEFAULT_JOINT_STATES = '/joint_states'
 EXECUTE_KNOWN_TRAJ_SRV = '/execute_kinematic_path'
 DEFAULT_IK_SERVICE = "/compute_ik"
 
+
 DEBUG_MODE =  True
+
+
 
 class motionExecution():
 
@@ -51,13 +55,7 @@ class motionExecution():
         self.arm = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
         
-        rospy.Subscriber("/robot_safe_stop", Bool,self.safe_stop_callback)
-        self.safe_stop = False
-
-    def safe_stop_callback(self, msg):
-        self.safe_stop=msg.data
-        print('callback:',self.safe_stop)
-
+     
     def robotTrajectoryFromPlan(self, plan, joint_names):
         """Given a dmp plan (GetDMPPlanResponse) create a RobotTrajectory to be able to visualize what it consists and also
         to be able to send it to execution"""
@@ -96,22 +94,16 @@ class motionExecution():
         return True
 
    
-            
-
-
-
   
     def sendTrajectoryAction(self,pla,_initial_pose,simulation):
         if simulation:
-            print('Simulation')
             client = actionlib.SimpleActionClient('eff_joint_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
-        else: #scaled_pos_joint_traj_controller
-            print('Real\n')
-            client = actionlib.SimpleActionClient('scaled_pos_joint_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
+        else:
+            print('real_robot')
+            client = actionlib.SimpleActionClient('/scaled_pos_joint_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
         
-        print('Waiting for server')
         client.wait_for_server()
-        print('Server conected')
+        #print('connected:',client.get_result())
         g = FollowJointTrajectoryGoal()
         g.trajectory = JointTrajectory()
         g.trajectory.joint_names = self.arm
@@ -128,29 +120,10 @@ class motionExecution():
                 V = [velocity[0],velocity[1],velocity[2],velocity[3],velocity[4],velocity[5]]
                 T = times[i]
                 g.trajectory.points.append(JointTrajectoryPoint(positions=Q, velocities=V, time_from_start=rospy.Duration(T)))
-            print('Sending goal')
             client.send_goal(g)
-            print('Goal sent')
-            
-            # Check if the action has finished
-            #client.wait_for_result(rospy.Duration(0))
-            safe_stop = 0
-            while not rospy.is_shutdown():
-                print('while:',self.safe_stop)
-                if self.safe_stop:
-                    client.cancel_goal()
-                    print('Goal cancelled')
-                    return False
-                
-                result = client.get_result()
-                #res: error_code: -4 error_string: "shoulder_lift_joint path error -0.484287" 
-                #<class 'control_msgs.msg._FollowJointTrajectoryResult.FollowJointTrajectoryResult'>
-                print('res:',result, type(result))
-                if result != 0 and result != -4 and result != None:
-                    rospy.loginfo(f"Goal achieved: {result}")
-                    break  # Exit the loop when the action is completed
-
-
+            client.wait_for_result(rospy.Duration(0))
+            result = client.get_result()
+            rospy.loginfo(f"Goal achieved: {result}")
         except KeyboardInterrupt:
             client.cancel_goal()
             raise
@@ -181,6 +154,7 @@ class motionExecution():
     def pathPublish(self,_path,_linkName):
         imitated_path = Path()
         imitated_path.header.frame_id = "base_link"
+
         for itr in range(len(_path.plan.points)):
             joint_positions = _path.plan.points[itr].positions
             path = self.fkPath(joint_positions,_linkName)
