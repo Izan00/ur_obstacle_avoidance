@@ -1,16 +1,12 @@
 <?xml version="1.0"?>
 <launch>
 
-  <!--Obstacle parameters-->
-  <arg name="obstacle_urdf" default="none" doc="Use 'none' for no obstacle"/>
-
   <!--Camera parameters and configuration-->
   <arg name="use_cam" default="true"/>
   <arg name="sim_cam" default="false"/>
   <arg name="use_cam_tool" default="false"/>
   <arg name="publish_pointcloud" default="true"/>
   <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/d435_camera.urdf.xacro'"/>
-
 
   <!--Robot description and related parameter files -->
   <arg name="robot_model" default="ur3" />
@@ -84,8 +80,7 @@
     sim_cam:=$(arg sim_cam)
     use_cam_tool:=$(arg use_cam_tool)
     camera_urdf:=$(arg camera_urdf)
-    publish_pointcloud:=$(arg publish_pointcloud)
-    obstacle_urdf:=$(arg obstacle_urdf)"
+    publish_pointcloud:=$(arg publish_pointcloud)"
   />
 
   <!-- Convert joint states to /tf tranforms -->
@@ -130,7 +125,9 @@
   </include>
   
   <group if="$(arg use_cam)">
-  <include file="$(find roy_dmp)/launch/rs_d435_camera.launch" unless="$(arg sim_cam)"/>
+    <group unless="$(arg sim_cam)">
+      <include file="$(find roy_dmp)/launch/rs_d435_camera.launch"/>
+    </group>
   </group>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" if="$(arg rviz)"/>
 

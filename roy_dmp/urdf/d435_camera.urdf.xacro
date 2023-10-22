@@ -7,7 +7,7 @@
   <xacro:arg name="topics_ns" default="camera" />
   <xacro:arg name="sim_cam" default="false" />
   <xacro:arg name="use_mesh" default="true" />
-  <xacro:arg name="publish_pointcloud" default="false" />
+  <xacro:arg name="publish_pointcloud" default="false"/>
 
   <xacro:property name="sim_cam" value="$(arg sim_cam)" />
   
@@ -19,7 +19,7 @@
     <xacro:arg name="use_nominal_extrinsics" default="false"/>
   </xacro:unless>
 
-  <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro" />
+  <xacro:include filename="$(find roy_dmp)/urdf/_d435.urdf.xacro" />
 
   <link name="$(arg parent)" />
   
@@ -47,7 +47,7 @@
     <joint name="cam_joint_2" type="fixed">
       <parent link="cam_support_base_link"/>
       <child link="cam_support_1_link"/>
-      <origin xyz="0 0 0.4" rpy="0 0 0"/>
+      <origin xyz="0.01931 0 0.61" rpy="0 0 0"/>
     </joint>
 
     <joint name="cam_joint_3" type="fixed">
@@ -59,11 +59,11 @@
     <joint name="cam_joint_4" type="fixed">
       <parent link="cam_support_2_link"/>
       <child link="camera_base_link"/>
-      <origin xyz="0 0.019 -0.012" rpy="0 0 0"/>
+      <origin xyz="0.019 0.0 -0.012" rpy="0 0 0"/>
     </joint>
   </xacro:unless>
   
-  <xacro:sensor_d435 parent="$(arg parent)" use_nominal_extrinsics="$(arg use_nominal_extrinsics)" add_plug="$(arg add_plug)" use_mesh="$(arg use_mesh)" name="$(arg name)" topics_ns="$(arg topics_ns)" publish_pointcloud="$(arg publish_pointcloud)">
+  <xacro:sensor_d435 parent="$(arg parent)" gazebo="$(arg sim_cam)" use_nominal_extrinsics="$(arg use_nominal_extrinsics)" add_plug="$(arg add_plug)" use_mesh="$(arg use_mesh)" name="$(arg name)" topics_ns="$(arg topics_ns)" publish_pointcloud="$(arg publish_pointcloud)">
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:sensor_d435>
 </robot>

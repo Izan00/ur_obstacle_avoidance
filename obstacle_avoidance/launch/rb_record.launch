@@ -4,6 +4,7 @@
 /camera/color/camera_info
 /camera/color/image_raw
 /camera/depth/color/points
+/camera/depth/color/points_bounded
 /camera/depth/color/points_filtered
 /camera/depth/color/points_sampled
 /camera/depth/image_rect_raw

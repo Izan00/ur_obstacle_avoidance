@@ -57,7 +57,6 @@
     safety_limits:=$(arg safety_limits)
     safety_pos_margin:=$(arg safety_pos_margin)
     safety_k_position:=$(arg safety_k_position)
-    sim:=true
     sim_cam:=$(arg sim_cam)
     use_cam:=$(arg use_cam)
     use_cam_tool:=$(arg use_cam_tool)
@@ -97,6 +96,12 @@
     <arg name="pkg" value="dmp" />
     <arg name="file" value="dmp.launch" />
   </include>
+
+  <group if="$(arg use_cam)">
+    <group unless="$(arg sim_cam)">
+      <include file="$(find roy_dmp)/launch/rs_d435_camera.launch"/>
+    </group>
+  </group>
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_config)" if="$(arg rviz)"/>
 

@@ -10,13 +10,15 @@
   <xacro:arg name="safety_pos_margin" default="0.15"/>
   <xacro:arg name="safety_k_position" default="20"/>
   
-  <xacro:arg name="obstacle_urdf" default="none"/>
   <xacro:arg name="use_cam" default="true"/>
   <xacro:arg name="sim_cam" default="true"/>
   <xacro:arg name="use_cam_tool" default="false"/>
   <xacro:arg name="camera_urdf" default=""/>
-
-  <xacro:arg name="sim" default="false" />
+  <xacro:arg name="name" default="camera" />
+  <xacro:arg name="topics_ns" default="camera" />
+  <xacro:arg name="publish_pointcloud" default="true" />
+  <xacro:arg name="add_plug" default="false" />
+  <xacro:arg name="parent" default="camera_base_link" />
 
   <xacro:property name="M_PI" value="3.14159265359" />
   <xacro:property name="robot_prefix" value=""/>
@@ -34,27 +36,8 @@
 
   <!-- camera -->
   <xacro:property name="use_cam" value="$(arg use_cam)"/>
-  <xacro:property name="sim_cam" value="$(arg sim_cam)"/>
   <xacro:if value="${use_cam}">
-    <xacro:arg name="name" default="camera" />
-    <xacro:arg name="topics_ns" default="camera" />
-    <xacro:arg name="use_nominal_extrinsics" default="true" />
-    <xacro:arg name="publish_pointcloud" default="true" />
-    <xacro:arg name="add_plug" default="false" />
-    <xacro:arg name="parent" default="camera_base_link" />
-    <xacro:if value="${sim_cam}">
     <xacro:include filename="$(arg camera_urdf)"/>
-    </xacro:if>
-    <xacro:unless value="${sim_cam}">
-    	<xacro:include filename="$(find roy_dmp)/urdf/d435_camera.urdf.xacro"/>
-    </xacro:unless>
   </xacro:if>
- 
-<!-- obstacle -->
-<xacro:property name="obstacle_urdf" value="$(arg obstacle_urdf)"/>
-  
-  <xacro:unless value="${obstacle_urdf == 'none'}">
-    <xacro:include filename="$(arg obstacle_urdf)"/>
-  </xacro:unless>
   
 </robot>
