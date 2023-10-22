@@ -35,13 +35,13 @@ from geometry_msgs.msg import Point, Quaternion, Vector3
 from std_msgs.msg import ColorRGBA
 
 class SafetyCheck:
-    def __init__(self, min_samples,eps,cluster_size_th, voxel_size, alpha):
+    def __init__(self, min_samples,eps,cluster_size_th, voxel_size, alpha, algorithm, leaf_size, delayluna_method):
         rospy.init_node('safety_check')
 
-        rospy.Subscriber("/camera/depth/color/points_filtered", PointCloud2, self.pointCloudCallback, buff_size=1)
+        rospy.Subscriber("/camera/depth/color/points_bounded", PointCloud2, self.pointCloudCallback, buff_size=100000)
         self.safe_stop_publisher = rospy.Publisher('/robot_safe_stop', Bool, queue_size=1)
         self.centroid_marker_publisher = rospy.Publisher('/centroids_marker', Marker, queue_size=1)
-        self.collision_scene_marker_pub = rospy.Publisher('collision_object_marker', PlanningScene, queue_size=10)
+        self.collision_scene_marker_pub = rospy.Publisher('collision_object_marker', PlanningScene, queue_size=1)
 
         moveit_commander.roscpp_initialize(sys.argv)
         self.scene = moveit_commander.PlanningSceneInterface()
@@ -58,7 +58,10 @@ class SafetyCheck:
         self.min_samples = min_samples
         self.eps = eps
         self.cluster_size_th = cluster_size_th
+        self.leaf_size = leaf_size
+        self.algorithm = algorithm
 
+        self.delayluna_method = delayluna_method
         self.voxel_size = voxel_size
         self.alpha = alpha
 
@@ -66,7 +69,7 @@ class SafetyCheck:
         #kmeans = KMeans(n_clusters=2, random_state=0, n_init="auto").fit(X)
         #print(kmeans.cluster_centers_)
         
-        db = DBSCAN(eps=self.eps, min_samples=self.min_samples).fit(cloud)
+        db = DBSCAN(eps=self.eps, min_samples=self.min_samples, algorithm=self.algorithm, leaf_size=self.leaf_size,n_jobs=-1).fit(cloud)
         labels = db.labels_
         
         clusters = []
@@ -109,29 +112,42 @@ class SafetyCheck:
 
 
     def pointCloudCallback(self, cloud_msg):
+        start = time.time()
+        start1 = time.time()
         cloud = list(point_cloud2.read_points(cloud_msg, field_names=("x", "y", "z"), skip_nans=True))
-        
+        print(time.time() - start1)
         if len(cloud) > 0:
             cloud = np.array(cloud)
-
+            #np.save('point_cloud.npy', cloud)
+            start1 = time.time()
             centroids, clusters = self.create_clusters(cloud)
-
+            print('Cluster time:',time.time() - start1)
+            #print('clusters:',len(clusters))
+            print('------')
             for i, (centroid,cluster) in enumerate(zip(centroids, clusters)):
-
                 cluster_name = 'cluster_'+str(i)
-
-                # Surface generation
-                self.create_mesh(cluster,cluster_name)
-
-                # Add collision object to the planning scene
-                self.add_collision_object(cluster_name, cloud_msg.header)
-
-                #
-                self.movement_check(centroids)
-
-                #
+                
+                start1 = time.time()
                 self.publish_centroid_marker(centroids, cloud_msg.header)
+                print('Publish time:',time.time() - start1)
+                print('------')
+                
+                start1 = time.time()
+                #self.movement_check(centroids)
+                print('Movement check time:',time.time() - start1)
 
+                start1 = time.time()
+                # Surface generation
+                #self.create_mesh(cluster,cluster_name)
+                print('Create mesh time:',time.time() - start1)
+                # Add collision object to the planning scene
+                start1 = time.time()
+                #self.add_collision_object(cluster_name, cloud_msg.header)
+                print('Add collsion time:',time.time() - start1)
+                
+                
+            print('Total time:',time.time() - start)
+            print('=====')
                 #cluster_pcl2 = array_to_pointcloud(cluster_points)
                 #cluster_msg = ros_numpy.msgify(PointCloud2, cluster_pcl2, stamp=pcl_msg.header.stamp, frame_id='base_link')
                 #cluster_publisher = rospy.Publisher('/clustered_pointcloud_'+str(i), PointCloud2, queue_size=1)
@@ -143,7 +159,7 @@ class SafetyCheck:
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
         #o3d.visualization.draw_geometries([pcd])
-        pcd = pcd.voxel_down_sample(voxel_size=self.voxel_size) #0.02
+        pcd = pcd.voxel_down_sample(voxel_size=self.voxel_size)
         #o3d.visualization.draw_geometries([pcd])
 
         points = np.asarray(pcd.points)
@@ -151,23 +167,25 @@ class SafetyCheck:
         point_cloud = pv.PolyData(points)
         
         #mesh = point_cloud.reconstruct_surface(nbr_sz=10,sample_spacing=0.01)
-        #mesh.plot(show_edges=True)
+   
+        if self.delayluna_method=='2d':
+            mesh = point_cloud.delaunay_2d(alpha=self.alpha)
+
+        elif self.delayluna_method=='3d':
+            mesh = point_cloud.delaunay_3d(alpha=self.alpha, progress_bar=False).extract_surface().triangulate()
+
+        #volume = point_cloud.delaunay_3d(alpha=self.alpha)
+        #mesh = volume.extract_geometry()
         
-        mesh = point_cloud.delaunay_2d(alpha=self.alpha).clean() #0.04
-        #mesh.plot(show_edges=True)
-
-        #mesh = point_cloud.delaunay_3d(alpha=0.02, progress_bar=False).extract_surface().triangulate()#.clean()
-        #mesh.plot(show_edges=True)
-
+        mesh.clean(inplace=True)
         mesh.compute_normals(inplace=True)
         
         #mesh.subdivide(1, subfilter="linear", inplace=True)
-        '''
-        fixer = pymeshfix.MeshFix(mesh)
-        fixer.repair(joincomp=True, remove_smallest_components=False)
-        fixer.mesh.plot()
-        mesh = fixer.mesh 
-        '''
+     
+        #fixer = pymeshfix.MeshFix(mesh)
+        #fixer.repair(joincomp=True, remove_smallest_components=False)
+        #mesh = fixer.mesh 
+        
         #mesh.flip_normal([1.0, 1.0, -1.0], transform_all_input_vectors=True, inplace=True)
 
         mesh.save(centroid_name+'.stl')
@@ -206,7 +224,7 @@ class SafetyCheck:
 
         # Check if workspace is still
         if self.still_count>5:
-            if abs(self.movement)<0.01:
+            if abs(self.movement)<0.05:
                 self.still = True
             else:
                 self.still= False
@@ -251,12 +269,15 @@ def array_to_pointcloud(pc_array, intensity=1.0):
 
 if __name__ == '__main__':
     
-    min_samples = 10
-    eps = 0.01
-    cluster_size_th = 10
+    min_samples = 1
+    eps = 0.05
+    algorithm=['auto', 'ball_tree', 'kd_tree', 'brute'][0]
+    leaf_size=30
+    cluster_size_th = 50
+    delayluna_method=['2d','3d'][0]
     voxel_size = 0.01
-    alpha = 0.06
+    alpha = 0.05
 
-    safety_check = SafetyCheck(min_samples, eps, cluster_size_th, voxel_size, alpha)
+    safety_check = SafetyCheck(min_samples, eps, cluster_size_th, voxel_size, alpha, algorithm, leaf_size,delayluna_method)
     
     rospy.spin()

@@ -12,11 +12,13 @@
       leaf_size: 0.01
     </rosparam>
     <rosparam unless="$(arg sim)">
-      leaf_size: 0.005
+      leaf_size: 0.01
     </rosparam>
   </node>
 
-  <node name="workspace_filter_node" pkg="obstacle_avoidance" type="workspace_filter.py" output="screen"> 
+  <!--<node name="workspace_filter_node" pkg="obstacle_avoidance" type="workspace_filter.py" output="screen"> 
+  </node>-->
+  <node name="workspace_filter_node" pkg="obstacle_avoidance" type="workspace_filter_2" output="screen"> 
   </node>
 
   <node name="laser_filter" pkg="sensor_filters" type="pointcloud2_filter_chain" output="log">
@@ -25,7 +27,9 @@
       <remap from="~output" to="/camera/depth/color/points_filtered" />
   </node>
 
-  <node name="safety_check_node" pkg="obstacle_avoidance" type="safety_check.py" output="screen"> 
+  <!--<node name="safety_check_node" pkg="obstacle_avoidance" type="safety_check.py" output="screen"> 
+  </node>-->
+  <node name="safety_check_node" pkg="obstacle_avoidance" type="safety_check_2" output="screen"> 
   </node>
 
 </launch>

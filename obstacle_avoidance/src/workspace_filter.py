@@ -21,10 +21,10 @@ class WorkspaceFilter:
         self.tf_buffer = tf2_ros.Buffer()
         tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         
-        self.cloud_sub = rospy.Subscriber('/camera/depth/color/points_sampled', PointCloud2, self.pointcloud_callback)
+        self.cloud_sub = rospy.Subscriber('/camera/depth/color/points_sampled', PointCloud2, self.pointcloud_callback,buff_size=10000)
 
         # Create a publisher for the filtered point cloud
-        self.filtered_cloud_pub = rospy.Publisher('/camera/depth/color/points_bounded', PointCloud2, queue_size=10)
+        self.filtered_cloud_pub = rospy.Publisher('/camera/depth/color/points_bounded', PointCloud2, queue_size=1)
 
 
     def pointcloud_callback(self, cloud_msg):
@@ -84,7 +84,7 @@ class WorkspaceFilter:
         self.filtered_cloud_pub.publish(filtered_cloud_msg)
 
 if __name__ == '__main__':
-    base_boundaries = [-5.5,0.45,-0.2,0.8,0.01,100] # x_min, x_max, y_min, y_max, z_min, z_max
+    base_boundaries = [-0.45,0.45,-0.15,0.75,0.05,100] # x_min, x_max, y_min, y_max, z_min, z_max
     target_frame = 'base_link'
     transformer = WorkspaceFilter(base_boundaries, target_frame)
 
