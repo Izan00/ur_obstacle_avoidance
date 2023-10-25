@@ -7,7 +7,7 @@
   
   <!--Camera parameters and configuration-->
   <arg name="use_cam" default="true"/>
-  <arg name="sim_cam" default="false"/>
+  <arg name="sim_cam" default="true"/>
   <arg name="use_cam_tool" default="false"/>
   <arg name="publish_pointcloud" default="true"/>
   <arg name="camera_urdf" default="'$(find roy_dmp)/urdf/d435_camera.urdf.xacro'"/>

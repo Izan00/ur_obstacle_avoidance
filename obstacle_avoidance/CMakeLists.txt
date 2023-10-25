@@ -21,8 +21,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(PCL 1.7 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
-find_package(CGAL REQUIRED)
-find_package(GMP REQUIRED)
+find_package(VTK REQUIRED)
+
+include(${VTK_USE_FILE})
 
 catkin_package(
   CATKIN_DEPENDS roscpp sensor_msgs tf2_ros std_msgs sensor_msgs moveit_core
@@ -37,4 +38,7 @@ add_executable(workspace_filter_2 src/workspace_filter_2.cpp)
 target_link_libraries(workspace_filter_2 ${catkin_LIBRARIES})
 
 add_executable(safety_check_2 src/safety_check_2.cpp)
-target_link_libraries(safety_check_2 ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} CGAL::CGAL)
+target_link_libraries(safety_check_2 ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${VTK_LIBRARIES})
+
+
+

@@ -31,19 +31,50 @@
 #include <pcl/surface/convex_hull.h>
 #include <pcl/surface/concave_hull.h>
 
+#include <pcl/conversions.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/surface/mls.h>
 #include <pcl_conversions/pcl_conversions.h>
-
 #include <pcl/surface/gp3.h>
+#include <pcl/surface/marching_cubes_hoppe.h>
+#include <pcl/filters/voxel_grid.h>
+
+#include <pcl/io/obj_io.h>
+#include <pcl/io/pcd_io.h>
+
+#include <pcl/surface/marching_cubes_hoppe.h>
+#include <pcl/surface/marching_cubes_rbf.h>
+#include <pcl/common/copy_point.h>
+#include <pcl/surface/organized_fast_mesh.h>
+#include <pcl/surface/poisson.h>
+
+#include <vtkSmartPointer.h>
+#include <vtkPoints.h>
+#include <vtkPointData.h>
+#include <vtkPolyData.h>
+#include <vtkPLYWriter.h>
+#include <vtkSmartPointer.h>
+#include <vtkPolyData.h>
+#include <vtkPointData.h>
+#include <vtkCellData.h>
+#include <vtkDoubleArray.h>
+#include <vtkPointLocator.h>
+#include <vtkPolyDataNormals.h>
+#include <vtkSmoothPolyDataFilter.h>
+#include <vtkDelaunay2D.h>
+#include <vtkDelaunay3D.h>
+#include <vtkDataSetSurfaceFilter.h>
+#include <vtkCleanPolyData.h>
+#include <vtkSTLWriter.h>
+#include <vtkVersion.h>
 
 class SafetyCheck
 {
 public:
-    SafetyCheck(const int& min_samples, const double& eps, const int& cluster_size_th, const double& voxel_size, const double& alpha, const int& leaf_size)
-        : min_samples(min_samples), eps(eps), cluster_size_th(cluster_size_th), voxel_size(voxel_size), alpha(alpha), leaf_size(leaf_size)
+    SafetyCheck(const int& min_samples, const double& eps, const int& cluster_size_th, const double& voxel_size, const double& alpha, const int& leaf_size,const std::string& mesh_algo)
+        : min_samples(min_samples), eps(eps), cluster_size_th(cluster_size_th), voxel_size(voxel_size), alpha(alpha), leaf_size(leaf_size), mesh_algo(mesh_algo)
     {
         pcl_sub = nh.subscribe("/camera/depth/color/points_bounded", 1, &SafetyCheck::pointCloudCallback, this);
         safe_stop_pub = nh.advertise<std_msgs::Bool>("/robot_safe_stop", 1);
@@ -111,55 +142,113 @@ public:
         //prev_collisions.push_back(object_name);
     };
 
-    void createMesh(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pcl_cloud, shape_msgs::Mesh& mesh)
+    void createMesh(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pcl_cloud, shape_msgs::Mesh& mesh_msg)
     {
-        // Create a mesh
-        pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
-        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-        pcl::NormalEstimation<pcl::PointXYZ, pcl::PointNormal> ne;
-        ne.setInputCloud(pcl_cloud);
-        ne.setSearchMethod(tree);
-        ne.setKSearch(20);
-        ne.compute(*cloud_with_normals);
+ 
+        // Save the point cloud to a PCD file (ASCII format)
+        pcl::io::savePCDFileASCII("output_cloud.pcd", *pcl_cloud);
 
-        pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
-        pcl::PolygonMesh triangles;
-        gp3.setInputCloud(cloud_with_normals);
-        gp3.setSearchRadius(0.5);
-        gp3.setMu(2.5);
-        gp3.setMaximumNearestNeighbors(100);
-        gp3.setMaximumSurfaceAngle(M_PI / 4); // 45 degrees
-        gp3.setMinimumAngle(M_PI / 18);       // 10 degrees
-        gp3.setMaximumAngle(2 * M_PI / 3);    // 120 degrees
-        gp3.setNormalConsistency(true);
-        gp3.reconstruct(triangles);
-
-        // Extract vertices and polygons from the mesh
-        pcl::PointCloud<pcl::PointXYZ> vertices;
-        pcl::fromPCLPointCloud2(triangles.cloud, vertices);
-
-        std::vector<pcl::Vertices> polygons = triangles.polygons;
-
-        // Convert pcl::PointCloud<pcl::PointXYZ> to shape_msgs::Mesh::vertices
-        vertices.resize(vertices.size());
-        for (size_t i = 0; i < vertices.size(); ++i)
+        if(mesh_algo == "d2d")
         {
-            geometry_msgs::Point point;
-            point.x = vertices[i].x;
-            point.y = vertices[i].y;
-            point.z = vertices[i].z;
-            mesh.vertices.push_back(point);
+            // Create vtkPoints and add points from the point cloud
+            vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+            for (const auto& point : pcl_cloud->points)
+            {
+                points->InsertNextPoint(point.x, point.y, point.z);
+            }
+
+            // Create vtkPolyData and set the points
+            vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+            polydata->SetPoints(points);
+
+            // Perform Delaunay triangulation
+            vtkSmartPointer<vtkDelaunay2D> delaunay = vtkSmartPointer<vtkDelaunay2D>::New();
+            delaunay->SetInputData(polydata);
+
+            // Extract the surface of the triangulation
+            vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+            surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
+
+            // Clean the polydata
+            vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
+            cleanPolyData->SetInputConnection(surfaceFilter->GetOutputPort());
+
+            // Extract polygons
+            vtkCellArray* vtkPolygons = cleanPolyData->GetOutput()->GetPolys();
+            vtkPolygons->InitTraversal();
+            vtkIdType npts, *pts;
+            while (vtkPolygons->GetNextCell(npts, pts))
+            {
+                shape_msgs::MeshTriangle triangle;
+                triangle.vertex_indices[0] = pts[0];
+                triangle.vertex_indices[1] = pts[1];
+                triangle.vertex_indices[2] = pts[2];
+                mesh_msg.triangles.push_back(triangle);
+            }
+
+            // Save the reconstructed mesh to a file (e.g., STL)
+            vtkSmartPointer<vtkSTLWriter> writer = vtkSmartPointer<vtkSTLWriter>::New();
+            writer->SetFileName("output.stl");
+            writer->SetInputConnection(cleanPolyData->GetOutputPort());
+            writer->Write();
+        }
+        else if(mesh_algo == "chw"){
+            // Create vtkPoints and add points from the point cloud
+            vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+            for (const auto& point : pcl_cloud->points)
+            {
+                points->InsertNextPoint(point.x, point.y, point.z);
+            }
+
+            // Create vtkPolyData and set the points
+            vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+            polydata->SetPoints(points);
+
+            // Perform Delaunay3D for convex hull
+            vtkSmartPointer<vtkDelaunay3D> delaunay3D = vtkSmartPointer<vtkDelaunay3D>::New();
+            delaunay3D->SetInputData(polydata);
+
+            // Extract the surface of the triangulation
+            vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+            surfaceFilter->SetInputConnection(delaunay3D->GetOutputPort());
+
+            // Clean the polydata
+            vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
+            cleanPolyData->SetInputConnection(surfaceFilter->GetOutputPort());
+            
+            // Save the reconstructed mesh to a file (e.g., STL)
+            vtkSmartPointer<vtkSTLWriter> writer = vtkSmartPointer<vtkSTLWriter>::New();
+            writer->SetFileName("output.stl");
+            writer->SetInputConnection(cleanPolyData->GetOutputPort());
+            writer->Write();
+            
+            // Extract vertices
+            vtkPoints* vtkVertices = cleanPolyData->GetOutput()->GetPoints();
+            for (vtkIdType i = 0; i < vtkVertices->GetNumberOfPoints(); ++i)
+            {
+                geometry_msgs::Point point;
+                double* coords = vtkVertices->GetPoint(i);
+                point.x = coords[0];
+                point.y = coords[1];
+                point.z = coords[2];
+                mesh_msg.vertices.push_back(point);
+            }
+
+            // Extract polygons
+            vtkCellArray* vtkPolygons = cleanPolyData->GetOutput()->GetPolys();
+            vtkPolygons->InitTraversal();
+            vtkIdType npts, *pts;
+            while (vtkPolygons->GetNextCell(npts, pts))
+            {
+                shape_msgs::MeshTriangle triangle;
+                triangle.vertex_indices[0] = pts[0];
+                triangle.vertex_indices[1] = pts[1];
+                triangle.vertex_indices[2] = pts[2];
+                mesh_msg.triangles.push_back(triangle);
+            }
+
         }
 
-        // Convert pcl::PolygonMesh to shape_msgs::Mesh::triangles
-        for (size_t i = 0; i < polygons.size(); ++i)
-        {
-            shape_msgs::MeshTriangle triangle;
-            triangle.vertex_indices[0] = polygons[i].vertices[0];
-            triangle.vertex_indices[1] = polygons[i].vertices[1];
-            triangle.vertex_indices[2] = polygons[i].vertices[2];
-            mesh.triangles.push_back(triangle);
-        }
     };
 
     void publishCentroidMarker(const std::vector<Eigen::Vector4f>& centroids, const std_msgs::Header& header)
@@ -293,6 +382,7 @@ private:
     double voxel_size;
     double alpha;
     int leaf_size;
+    std::string mesh_algo;
     std::string algorithm;
     std::string delayluna_method;
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
@@ -309,8 +399,8 @@ int main(int argc, char** argv)
     double voxel_size = 0.01;
     double alpha = 0.05;
     int leaf_size = 30;
-
-    SafetyCheck safety_check(min_samples, eps, cluster_size_th, voxel_size, alpha, leaf_size);
+    std::string mesh_algo = "chw"; // chw, d2d
+    SafetyCheck safety_check(min_samples, eps, cluster_size_th, voxel_size, alpha, leaf_size, mesh_algo);
 
     ros::spin();
 

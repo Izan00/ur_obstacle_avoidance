@@ -28,6 +28,8 @@ DEFAULT_IK_SERVICE = "/compute_ik"
 
 DEBUG_MODE =  True
 
+error_codes = {0:'SUCCESSFUL', -1:'INVALID_GOAL', -2:'INVALID_JOINTS', -3:'OLD_HEADER_TIMESTAMP', -4:'PATH_TOLERANCE_VIOLATED', -5:'GOAL_TOLERANCE_VIOLATED'}
+
 class motionExecution():
 
     def __init__(self):
@@ -56,7 +58,7 @@ class motionExecution():
 
     def safe_stop_callback(self, msg):
         self.safe_stop=msg.data
-        print('callback:',self.safe_stop)
+        #print('callback:',self.safe_stop)
 
     def robotTrajectoryFromPlan(self, plan, joint_names):
         """Given a dmp plan (GetDMPPlanResponse) create a RobotTrajectory to be able to visualize what it consists and also
@@ -136,18 +138,18 @@ class motionExecution():
             #client.wait_for_result(rospy.Duration(0))
             safe_stop = 0
             while not rospy.is_shutdown():
-                print('while:',self.safe_stop)
+                #print('while:',self.safe_stop)
                 if self.safe_stop:
                     client.cancel_goal()
+                    
                     print('Goal cancelled')
                     return False
                 
                 result = client.get_result()
                 #res: error_code: -4 error_string: "shoulder_lift_joint path error -0.484287" 
                 #<class 'control_msgs.msg._FollowJointTrajectoryResult.FollowJointTrajectoryResult'>
-                print('res:',result, type(result))
-                if result != 0 and result != -4 and result != None:
-                    rospy.loginfo(f"Goal achieved: {result}")
+                if result != None: 
+                    rospy.loginfo("Goal achieved: "+ error_codes[result.error_code])
                     break  # Exit the loop when the action is completed
 
 

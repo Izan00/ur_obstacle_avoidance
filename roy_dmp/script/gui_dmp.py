@@ -439,7 +439,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.set_JointState_init_3_lineEdit.setText(str(self.initial_JS[3]))
         self.ui.set_JointState_init_4_lineEdit.setText(str(self.initial_JS[4]))
         self.ui.set_JointState_init_5_lineEdit.setText(str(self.initial_JS[5]))
-        print(self.initial_JS[0])
+        print(self.initial_JS)
     def getJS_goal_robot(self):
         # joint_states = rospy.wait_for_message("/joint_states", JointState)
         self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
@@ -583,6 +583,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if not st:
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
             self.ui.execute_plan_pushButton.setEnabled(False)
+            print('Retrieveing pose')
+            time.sleep(2)
+            self.getJS_init_robot() # TODO repair sim seg fault
+            time.sleep(2)
+            print('Pose retrieved')
 
     def collision_check(self):
         init_time_WP = time.time()
