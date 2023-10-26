@@ -8,12 +8,7 @@
   <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
     <remap from="~input" to="/camera/depth/color/points" />
     <remap from="~output" to="/camera/depth/color/points_sampled" />
-    <rosparam if="$(arg sim)">
-      leaf_size: 0.01
-    </rosparam>
-    <rosparam unless="$(arg sim)">
-      leaf_size: 0.01
-    </rosparam>
+    <param name="leaf_size" type="double" value="0.01" />
   </node>
 
   <!--<node name="workspace_filter_node" pkg="obstacle_avoidance" type="workspace_filter.py" output="screen"> 
@@ -30,6 +25,19 @@
   <!--<node name="safety_check_node" pkg="obstacle_avoidance" type="safety_check.py" output="screen"> 
   </node>-->
   <node name="safety_check_node" pkg="obstacle_avoidance" type="safety_check_2" output="screen"> 
+    <param name="leaf_size" type="double" value="0.01" />
+    <param name="min_cluster_size" type="int" value="1"/>
+    <param name="max_samples" type="int" value="25000"/>
+    <param name="eps" type="double" value="0.05"/>
+    <param name="cluster_size_th" type="int" value="50"/>
+    <param name="save_cloud" type="bool" value="false"/>
+    <param name="save_mesh" type="bool" value="false"/>
+    <param name="alpha" type="double" value="0.0"/>
+    <param name="mesh_algo" type="string" value="d3d"/>
+    <param name="cloud_sub_topic" type="string" value="/camera/depth/color/points_filtered"/>
+    <param name="safe_stop_pub_topic" type="string" value="/robot_safe_stop"/>
+    <param name="centroids_marker_pub_topic" type="string" value="/centroids_marker"/>
+        
   </node>
 
 </launch>

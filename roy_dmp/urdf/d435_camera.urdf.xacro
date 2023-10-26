@@ -41,7 +41,7 @@
     <joint name="cam_joint_1" type="fixed">
       <parent link="base_link"/>
       <child link="cam_support_base_link"/>
-      <origin xyz="-0.55 0.8 0" rpy="0 0 -0.7854"/>
+      <origin xyz="-0.55 0.77 0" rpy="0 0 -0.7854"/>
     </joint>
 
     <joint name="cam_joint_2" type="fixed">

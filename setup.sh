@@ -9,6 +9,7 @@ sudo apt-get install ros-noetic-tf2-sensor-msgs -y
 sudo apt-get install ros-noetic-sensor-filters -y
 sudo apt-get install python3-pcl -y
 sudo apt-get install ros-noetic-moveit -y
+#sudo apt-get install libcgal-dev -y
 pip install numpy==1.20.3
 pip install -U scikit-learn
 pip install open3d

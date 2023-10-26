@@ -1,25 +1,33 @@
 #include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_types.h>
-#include <pcl/filters/conditional_removal.h>
-#include <pcl/filters/crop_box.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <vector>
+
+#include "obstacle_avoidance.h"
 
 class WorkspaceFilter
 {
 public:
-    WorkspaceFilter(const std::vector<double>& base_boundaries,const std::string& target_frame)
-    : base_boundaries(base_boundaries), target_frame(target_frame)
+    WorkspaceFilter(ros::NodeHandle& nh) :nh_(nh)
     {
-        ros::NodeHandle nh;
+        // Topics
+        std::string cloud_sub_topic;
+        std::string cloud_pub_topic;
+
+        // Parameters update
+        nh_.param<double>("x_min", x_min, -0.45);
+        nh_.param<double>("x_max", x_max, 0.45);
+        nh_.param<double>("y_min", y_min, -0.15);
+        nh_.param<double>("y_max", y_max, 0.75);
+        nh_.param<double>("z_min", z_min, 0.05);
+        nh_.param<double>("z_max", z_max, 100.0);
+        nh_.param<std::string>("cloud_sub_topic", cloud_sub_topic, "/camera/depth/color/points_sampled");
+        nh_.param<std::string>("cloud_pub_topic", cloud_pub_topic, "/camera/depth/color/points_bounded");
+        nh_.param<std::string>("target_frame", target_frame, "base_link");
+        
+        // TF tranfomrs
         tf_listener_.reset(new tf2_ros::TransformListener(tf_buffer_));
 
-        cloud_sub_ = nh.subscribe("/camera/depth/color/points_sampled", 1, &WorkspaceFilter::pointcloudCallback, this);
-        filtered_cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/color/points_bounded", 1);
+        // Ros publishers/subscribers
+        cloud_sub_ = nh_.subscribe(cloud_sub_topic, 1, &WorkspaceFilter::pointcloudCallback, this);
+        filtered_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(cloud_pub_topic, 1);
     };
     
     void pointcloudCallback(const sensor_msgs::PointCloud2::ConstPtr &cloud_msg)
@@ -64,15 +72,7 @@ public:
 
     pcl::PointCloud<pcl::PointXYZ> filterPointCloud(const pcl::PointCloud<pcl::PointXYZ> &cloud)
     {
-        double x_min = base_boundaries[0];
-        double x_max = base_boundaries[1];
-        double y_min = base_boundaries[2];
-        double y_max = base_boundaries[3];
-        double z_min = base_boundaries[4];
-        double z_max = base_boundaries[5];
-
         pcl::PointCloud<pcl::PointXYZ> filtered_cloud;
-
         pcl::CropBox<pcl::PointXYZ> crop_filter;
         crop_filter.setInputCloud(cloud.makeShared());
         crop_filter.setMin(Eigen::Vector4f(x_min, y_min, z_min, 1.0));
@@ -83,7 +83,13 @@ public:
     };
 
 private:
-    std::vector<double> base_boundaries;
+    ros::NodeHandle nh_;
+    double x_min; 
+    double x_max; 
+    double y_min; 
+    double y_max; 
+    double z_min; 
+    double z_max;
     std::string target_frame;
     ros::Subscriber cloud_sub_;
     ros::Publisher filtered_cloud_pub_;
@@ -95,9 +101,9 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv,"workspace_filter_2");
 
-    std::vector<double> base_boundaries = {-0.45,0.45,-0.15,0.75,0.05,100}; // x_min, x_max, y_min, y_max, z_min, z_max
-    std::string target_frame = "base_link";
-    WorkspaceFilter workspace_filter(base_boundaries, target_frame);
+    ros::NodeHandle nh;
+
+    WorkspaceFilter workspace_filter(nh);
 
     ros::spin();
 

@@ -22,6 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(PCL 1.7 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(VTK REQUIRED)
+#find_package(CGAL REQUIRED)
+#find_package(GMP REQUIRED)
 
 include(${VTK_USE_FILE})
 
@@ -38,7 +40,11 @@ add_executable(workspace_filter_2 src/workspace_filter_2.cpp)
 target_link_libraries(workspace_filter_2 ${catkin_LIBRARIES})
 
 add_executable(safety_check_2 src/safety_check_2.cpp)
-target_link_libraries(safety_check_2 ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} ${VTK_LIBRARIES})
-
+target_link_libraries(safety_check_2 ${catkin_LIBRARIES} 
+                                     ${PCL_LIBRARIES} 
+                                     ${Boost_LIBRARIES} 
+                                     ${VTK_LIBRARIES} 
+                                     #CGAL::CGAL
+                                     )
 
 
