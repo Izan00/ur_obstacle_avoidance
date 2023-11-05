@@ -38,7 +38,7 @@
     <param name="leaf_size" type="double" value="0.01" />
     <param name="min_cluster_size" type="int" value="1"/>
     <param name="max_samples" type="int" value="25000"/>
-    <param name="eps" type="double" value="0.05"/>
+    <param name="cluster_tolerance" type="double" value="0.05"/>
     <param name="cluster_size_th" type="int" value="50"/>
     <param name="save_cloud" type="bool" value="false"/>
     <param name="save_mesh" type="bool" value="false"/>

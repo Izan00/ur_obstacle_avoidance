@@ -16,7 +16,7 @@ public:
         // Parameters update
         nh_.param<int>("min_cluster_size", min_cluster_size, 1);
         nh_.param<int>("max_samples", max_cluster_size, 25000);
-        nh_.param<double>("eps", eps, 0.05);
+        nh_.param<double>("cluster_tolerance", cluster_tolerance, 0.05);
         nh_.param<int>("cluster_size_th", cluster_size_th, 50);
         nh_.param<bool>("save_cloud", save_cloud, false);
         nh_.param<bool>("save_mesh", save_mesh, false);
@@ -40,7 +40,7 @@ public:
 
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-        ec.setClusterTolerance(eps);
+        ec.setClusterTolerance(cluster_tolerance);
         ec.setMinClusterSize(min_cluster_size);
         ec.setMaxClusterSize(max_cluster_size); // Set according to your needs
         ec.setSearchMethod(tree);
@@ -268,7 +268,7 @@ private:
     bool save_cloud;
     int min_cluster_size;
     int max_cluster_size;
-    double eps;
+    double cluster_tolerance;
     int cluster_size_th;
 
     // Mesh reconstruction
