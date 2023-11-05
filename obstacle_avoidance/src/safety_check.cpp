@@ -17,8 +17,9 @@ public:
         nh_.param<std::string>("safe_stop_pub_topic", safe_stop_pub_topic, "/robot_safe_stop");
         
         // Ros publishers/subscribers
-        pcl_sub = nh_.subscribe(cloud_sub_topic, 1, &SafetyCheck::centroidsCallback, this);
-        
+        centroids_sub = nh_.subscribe(centroids_sub_topic, 1, &SafetyCheck::centroidsCallback, this);
+        safe_stop_pub = nh.advertise<std_msgs::Bool>(safe_stop_pub_topic, 1);
+
         // Set safety check variables
         still_count = 0;
         still = true;
@@ -26,7 +27,7 @@ public:
     };
 
 
-    void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
+    void centroidsCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
     {
         // Convert cloud to pcl format
         pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -38,20 +39,20 @@ public:
 
     void movementCheck(const  pcl::PointCloud<pcl::PointXYZ>& centroids)
     {
-        if ((prev_centroids.cloud.empty() && !centroids.cloud.empty()) || (!prev_centroids.cloud.empty() && centroids.cloud.empty()))
+        if ((prev_centroids.points.empty() && !centroids.points.empty()) || (!prev_centroids.points.empty() && centroids.points.empty()))
         {
             movement += std::numeric_limits<double>::infinity();
         }
-        else if (prev_centroids.cloud.empty() && centroids.cloud.empty())
+        else if (prev_centroids.points.empty() && centroids.points.empty())
         {
             movement += 0;
         }
         else
         {
-            for (const auto& prev_centroid : prev_centroids.cloud)
+            for (const auto& prev_centroid : prev_centroids.points)
             {
                 double dist = std::numeric_limits<double>::max();
-                for (const auto& centroid : centroid.cloud)
+                for (const auto& centroid : centroids.points)
                 {
                     double temp_dist = std::sqrt(std::pow(prev_centroid.x - centroid.x, 2) +
                                                  std::pow(prev_centroid.y - centroid.y, 2) +
@@ -105,7 +106,7 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "safety_check");
 
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     SafetyCheck safety_check(nh);
 

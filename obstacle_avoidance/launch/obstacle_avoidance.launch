@@ -4,8 +4,8 @@
   <arg name='sim' value='True'/>
 
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
-  <node pkg="nodelet" type="nodelet" name="pcl_manager_node" args="manager" output="screen" />
-  <node pkg="nodelet" type="nodelet" name="voxel_grid_node" args="load pcl/VoxelGrid pcl_manager" output="screen">
+  <node pkg="nodelet" type="nodelet" name="pcl_manager_nodelet" args="manager" output="screen" />
+  <node pkg="nodelet" type="nodelet" name="voxel_grid_nodelet" args="load pcl/VoxelGrid pcl_manager_nodelet" output="screen">
     <remap from="~input" to="/camera/depth/color/points" />
     <remap from="~output" to="/camera/depth/color/points_sampled" />
     <param name="leaf_size" type="double" value="0.01" />
@@ -13,12 +13,12 @@
 
   <!-- Run Workspace filter to remove points outside the workspace -->
   <node name="workspace_filter_node" pkg="obstacle_avoidance" type="workspace_filter" output="screen"> 
-    <param name="x_min" type="double" value="-0.45"/>
+    <param name="x_min" type="double" value="-0.55"/>
     <param name="x_max" type="double" value="0.45"/>
-    <param name="y_min" type="double" value="-0.15"/>
-    <param name="y_max" type="double" value="0.75"/>
-    <param name="z_min" type="double" value="0.05"/>
-    <param name="z_max" type="double" value="100.0"/>
+    <param name="y_min" type="double" value="-0.2"/>
+    <param name="y_max" type="double" value="0.8"/>
+    <param name="z_min" type="double" value="0.01"/>
+    <param name="z_max" type="double" value="1.0"/>
     <param name="cloud_sub_topic" type="string" value="/camera/depth/color/points_sampled"/>
     <param name="cloud_pub_topic" type="string" value="/camera/depth/color/points_bounded"/>
     <param name="target_frame" type="string" value="base_link"/>

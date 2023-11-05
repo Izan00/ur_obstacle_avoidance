@@ -178,11 +178,11 @@ public:
     {
         // Convert the Eigen vector to PCL point cloud
         pcl::PointCloud<pcl::PointXYZ> pcl_centroids_cloud;
-        pcl_centroids_cloud.points.resize(points.size());
-        for (size_t i = 0; i < points.size(); ++i) {
-            pcl_centroids_cloud.points[i].x = points[i](0);
-            pcl_centroids_cloud.points[i].y = points[i](1);
-            pcl_centroids_cloud.points[i].z = points[i](2);
+        pcl_centroids_cloud.points.resize(centroids.size());
+        for (size_t i = 0; i < centroids.size(); ++i) {
+            pcl_centroids_cloud.points[i].x = centroids[i](0);
+            pcl_centroids_cloud.points[i].y = centroids[i](1);
+            pcl_centroids_cloud.points[i].z = centroids[i](2);
         }
 
         // Convert PCL point cloud to ROS sensor_msgs::PointCloud2
@@ -288,8 +288,8 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "collsion_volume_reconstruction");
 
-    ros::NodeHandle nh;
-
+    ros::NodeHandle nh("~");
+    
     CollisionVolumeReconstructuion collsion_volume_reconstruction(nh);
 
     ros::spin();
