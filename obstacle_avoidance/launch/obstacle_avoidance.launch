@@ -9,6 +9,8 @@
     <remap from="~input" to="/camera/depth/color/points" />
     <remap from="~output" to="/camera/depth/color/points_sampled" />
     <param name="leaf_size" type="double" value="0.01" />
+    <param name="filter_limit_min" type="double" value="0.0" />
+    <param name="filter_limit_max" type="double" value="100" />
   </node>
 
   <!-- Run Workspace filter to remove points outside the workspace -->

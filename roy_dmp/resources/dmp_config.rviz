@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /PlanningScene1/Scene Geometry1
-        - /Workspace Filter Volume1/Status1
       Splitter Ratio: 0.5
     Tree Height: 1001
   - Class: rviz/Selection
@@ -115,7 +114,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /camera/depth/color/points
       Unreliable: false
       Use Fixed Frame: true
@@ -130,8 +129,8 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color: 237; 212; 0
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: false
       Invert Rainbow: false
@@ -143,7 +142,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /camera/depth/color/points_sampled
       Unreliable: false
       Use Fixed Frame: true
@@ -171,7 +170,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /camera/depth/color/points_bounded
       Unreliable: false
       Use Fixed Frame: true
@@ -186,7 +185,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 52; 101; 164
+      Color: 81; 188; 226
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: false
@@ -199,7 +198,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /camera/depth/color/points_filtered
       Unreliable: false
       Use Fixed Frame: true
@@ -226,7 +225,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.05000000074505806
       Style: Spheres
       Topic: /centroids
       Unreliable: false
@@ -859,4 +858,4 @@ Window Geometry:
     collapsed: false
   Width: 1836
   X: 366
-  Y: 148
+  Y: 74
