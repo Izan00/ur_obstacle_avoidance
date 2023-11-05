@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <arg name="serial_no"           default=""/>
   <arg name="json_file_path"      default=""/>
@@ -10,7 +11,7 @@
   <arg name="fisheye_height"      default="480"/>
   <arg name="enable_fisheye"      default="false"/>
 
-  <arg name="depth_width"         default="640"/>
+  <arg name="depth_width"         default="640"/> <!--Up to 1280 × 720 -->
   <arg name="depth_height"        default="480"/>
   <arg name="enable_depth"        default="true"/>
 
@@ -19,21 +20,21 @@
   <arg name="enable_infra1"       default="false"/>
   <arg name="enable_infra2"       default="false"/>
 
-  <arg name="color_width"         default="640"/>
+  <arg name="color_width"         default="640"/> <!-- Up to 1920 × 1080 -->
   <arg name="color_height"        default="480"/>
   <arg name="enable_color"        default="true"/>
 
   <arg name="fisheye_fps"         default="30"/>
-  <arg name="depth_fps"           default="30"/>
+  <arg name="depth_fps"           default="30"/> <!--Up to 90 fps-->
   <arg name="infra_fps"           default="30"/>
-  <arg name="color_fps"           default="30"/>
+  <arg name="color_fps"           default="30"/> <!--Up to 30 fps -->
   <arg name="gyro_fps"            default="400"/>
   <arg name="accel_fps"           default="250"/>
   <arg name="enable_gyro"         default="true"/>
   <arg name="enable_accel"        default="true"/>
 
   <arg name="enable_pointcloud"         default="true"/>
-  <arg name="pointcloud_texture_stream" default="RS2_STREAM_COLOR"/> <!--RS2_STREAM_COLOR-->
+  <arg name="pointcloud_texture_stream" default="RS2_STREAM_COLOR"/> <!-- RS2_STREAM_ANY, RS2_STREAM_DEPTH, RS2_STREAM_COLOR-->
   
   <arg name="pointcloud_texture_index"  default="0"/>
 

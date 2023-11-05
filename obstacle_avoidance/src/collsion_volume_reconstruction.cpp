@@ -3,14 +3,14 @@
 #include "obstacle_avoidance.h"
 
 
-class SafetyCheck
+class CollisionVolumeReconstructuion
 {
 public:
-    SafetyCheck(ros::NodeHandle& nh) :nh_(nh)
+    CollisionVolumeReconstructuion(ros::NodeHandle& nh) :nh_(nh)
     {
         // Topics
         std::string cloud_sub_topic;
-        std::string safe_stop_pub_topic;
+        std::string centroids_pub_topic;
         std::string centroids_marker_pub_topic;
         
         // Parameters update
@@ -23,18 +23,14 @@ public:
         nh_.param<double>("alpha", alpha, 0.0);
         nh_.param<std::string>("mesh_algo", mesh_algo, "d3d");
         nh_.param<std::string>("cloud_sub_topic", cloud_sub_topic, "/camera/depth/color/points_filtered");
-        nh_.param<std::string>("safe_stop_pub_topic", safe_stop_pub_topic, "/robot_safe_stop");
+        nh_.param<std::string>("centroids_pub_topic", centroids_pub_topic, "/centroids");
         nh_.param<std::string>("centroids_marker_pub_topic", centroids_marker_pub_topic, "/centroids_marker");
         
         // Ros publishers/subscribers
-        pcl_sub = nh_.subscribe(cloud_sub_topic, 1, &SafetyCheck::pointCloudCallback, this);
-        safe_stop_pub = nh_.advertise<std_msgs::Bool>(safe_stop_pub_topic, 1);
-        centroid_marker_pub = nh_.advertise<visualization_msgs::Marker>(centroids_marker_pub_topic, 1);
+        pcl_sub = nh_.subscribe(cloud_sub_topic, 1, &CollisionVolumeReconstructuion::pointCloudCallback, this);
+        centroids_pub = nh.advertise<sensor_msgs::PointCloud2>(centroids_pub_topic, 1);
+        centroids_marker_pub = nh_.advertise<visualization_msgs::Marker>(centroids_marker_pub_topic, 1);
         
-        // Set safety check variables
-        still_count = 0;
-        still = true;
-        movement = 0;
     };
 
     void createClusters(const pcl::PointCloud<pcl::PointXYZ>& cloud, std::vector<pcl::PointCloud<pcl::PointXYZ>>& clusters, std::vector<Eigen::Vector4f>& centroids)
@@ -156,7 +152,7 @@ public:
 
     };
 
-    void publishCentroidMarker(const std::vector<Eigen::Vector4f>& centroids, const std_msgs::Header& header)
+    void publishCentroidsMarker(const std::vector<Eigen::Vector4f>& centroids, const std_msgs::Header& header)
     {
         visualization_msgs::Marker marker;
         marker.header = header;
@@ -175,8 +171,28 @@ public:
             marker.points.push_back(point);
         }
 
-        centroid_marker_pub.publish(marker);
+        centroids_marker_pub.publish(marker);
     };
+
+    void publishCentroids(const std::vector<Eigen::Vector4f>& centroids, const std_msgs::Header& header)
+    {
+        // Convert the Eigen vector to PCL point cloud
+        pcl::PointCloud<pcl::PointXYZ> pcl_centroids_cloud;
+        pcl_centroids_cloud.points.resize(points.size());
+        for (size_t i = 0; i < points.size(); ++i) {
+            pcl_centroids_cloud.points[i].x = points[i](0);
+            pcl_centroids_cloud.points[i].y = points[i](1);
+            pcl_centroids_cloud.points[i].z = points[i](2);
+        }
+
+        // Convert PCL point cloud to ROS sensor_msgs::PointCloud2
+        sensor_msgs::PointCloud2 centroids_cloud;
+        pcl::toROSMsg(pcl_centroids_cloud, centroids_cloud);
+
+        centroids_cloud.header = header;
+        centroids_pub.publish(centroids_cloud);
+    };
+
 
     void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
     {
@@ -199,11 +215,11 @@ public:
 		   centroids.clear();
 		}
 
-        //Publish centroids in Rviz
-        publishCentroidMarker(centroids, cloud_msg->header);
-        
-        // Check object movement
-        movementCheck(centroids);
+        // Publish centrids 
+        publishCentroids(centroids, cloud_msg->header);
+
+        // Publish centroids in Rviz
+        //publishCentroidsMarker(centroids, cloud_msg->header);
         
         // Process clusters
         for (size_t i = 0; i < centroids.size(); ++i)
@@ -240,56 +256,6 @@ public:
             prev_collisions = current_collisions;
         }   
     };
-    
-
-    void movementCheck(const std::vector<Eigen::Vector4f>& centroids)
-    {
-        if ((prev_centroids.empty() && !centroids.empty()) || (!prev_centroids.empty() && centroids.empty()))
-        {
-            movement += std::numeric_limits<double>::infinity();
-        }
-        else if (prev_centroids.empty() && centroids.empty())
-        {
-            movement += 0;
-        }
-        else
-        {
-            for (const auto& prev_centroid : prev_centroids)
-            {
-                double dist = std::numeric_limits<double>::max();
-                for (const auto& centroid : centroids)
-                {
-                    double temp_dist = std::sqrt(std::pow(prev_centroid[0] - centroid[0], 2) +
-                                                 std::pow(prev_centroid[1] - centroid[1], 2) +
-                                                 std::pow(prev_centroid[2] - centroid[2], 2));
-                    dist = std::min(dist, temp_dist);
-                }
-                movement += dist;
-                std::cout << "Dist: " << dist << std::endl;
-            }
-        }
-
-        std::cout << "Movement: " << movement << std::endl;
-
-        prev_centroids = centroids;
-
-        if (still_count > 5)
-        {
-            still = (std::abs(movement) < 0.05);
-            still_count = 0;
-            movement = 0;
-        }
-        else
-        {
-            still_count += 1;
-        }
-
-        std::cout << "Still: " << still << std::endl;
-
-        std_msgs::Bool safe_stop_msg;
-        safe_stop_msg.data = !still;
-        safe_stop_pub.publish(safe_stop_msg);
-    };
 
 private:
     // Parameters handler
@@ -297,10 +263,10 @@ private:
 
     // Ros publishers/subscribers
     ros::Subscriber pcl_sub;
-    ros::Publisher safe_stop_pub;
-    ros::Publisher centroid_marker_pub;
+    ros::Publisher centroids_pub;
+    ros::Publisher centroids_marker_pub;
 
-    // Clsutering
+    // Clustering
     bool save_cloud;
     int min_cluster_size;
     int max_cluster_size;
@@ -311,12 +277,6 @@ private:
     std::string mesh_algo; // d3d, d2d
     bool save_mesh;
     double alpha;
-    
-    // Movement check
-    std::vector<Eigen::Vector4f> prev_centroids;
-    int still_count;
-    bool still;
-    double movement;
 
     // Collisions
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
@@ -326,11 +286,11 @@ private:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "safety_check_2");
+    ros::init(argc, argv, "collsion_volume_reconstruction");
 
     ros::NodeHandle nh;
 
-    SafetyCheck safety_check(nh);
+    CollisionVolumeReconstructuion collsion_volume_reconstruction(nh);
 
     ros::spin();
 

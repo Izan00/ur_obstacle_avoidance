@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name='sim' value='True'/>
+
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager_node" args="manager" output="screen" />
+  <node pkg="nodelet" type="nodelet" name="voxel_grid_node" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/camera/depth/color/points" />
+    <remap from="~output" to="/camera/depth/color/points_sampled" />
+    <param name="leaf_size" type="double" value="0.01" />
+  </node>
+
+  <!-- Run Workspace filter to remove points outside the workspace -->
+  <node name="workspace_filter_node" pkg="obstacle_avoidance" type="workspace_filter" output="screen"> 
+    <param name="x_min" type="double" value="-0.45"/>
+    <param name="x_max" type="double" value="0.45"/>
+    <param name="y_min" type="double" value="-0.15"/>
+    <param name="y_max" type="double" value="0.75"/>
+    <param name="z_min" type="double" value="0.05"/>
+    <param name="z_max" type="double" value="100.0"/>
+    <param name="cloud_sub_topic" type="string" value="/camera/depth/color/points_sampled"/>
+    <param name="cloud_pub_topic" type="string" value="/camera/depth/color/points_bounded"/>
+    <param name="target_frame" type="string" value="base_link"/>
+  </node>  
+  
+  <!-- Run self robot filter to remove the robot from the pointcloud -->
+  <node name="robot_self_filter_node" pkg="sensor_filters" type="pointcloud2_filter_chain" output="log">
+    <rosparam command="load" file="$(find obstacle_avoidance)/config/filter_realsense_d435.yaml" />
+    <remap from="~input" to="/camera/depth/color/points_bounded" />
+    <remap from="~output" to="/camera/depth/color/points_filtered" />
+  </node>
+
+  <!-- Run collsion volume reconstruction to add collsion objects in the virtual enviroment model -->
+  <node name="collsion_volume_reconstruction_node" pkg="obstacle_avoidance" type="collsion_volume_reconstruction" output="screen"> 
+    <param name="leaf_size" type="double" value="0.01" />
+    <param name="min_cluster_size" type="int" value="1"/>
+    <param name="max_samples" type="int" value="25000"/>
+    <param name="eps" type="double" value="0.05"/>
+    <param name="cluster_size_th" type="int" value="50"/>
+    <param name="save_cloud" type="bool" value="false"/>
+    <param name="save_mesh" type="bool" value="false"/>
+    <param name="alpha" type="double" value="0.0"/>
+    <param name="mesh_algo" type="string" value="d3d"/>
+    <param name="cloud_sub_topic" type="string" value="/camera/depth/color/points_filtered"/>
+    <param name="centroids_pub_topic" type="string" value="/centroids"/>
+    <param name="centroids_marker_pub_topic" type="string" value="/centroids_marker"/>
+  </node>
+
+  <!-- Run safety check to reconstruct collision objets in the virtual enviroment model -->
+  <node name="safety_check_node" pkg="obstacle_avoidance" type="safety_check" output="screen"> 
+    <param name="clusters_sub_topic" type="string" value="/clusters"/>
+    <param name="safe_stop_pub_topic" type="string" value="/robot_safe_stop"/>
+  </node>
+
+</launch>

@@ -36,15 +36,19 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(workspace_filter_2 src/workspace_filter_2.cpp)
-target_link_libraries(workspace_filter_2 ${catkin_LIBRARIES})
+add_executable(workspace_filter src/workspace_filter.cpp)
+target_link_libraries(workspace_filter ${catkin_LIBRARIES})
 
-add_executable(safety_check_2 src/safety_check_2.cpp)
-target_link_libraries(safety_check_2 ${catkin_LIBRARIES} 
+add_executable(safety_check src/safety_check.cpp)
+target_link_libraries(safety_check ${catkin_LIBRARIES} 
                                      ${PCL_LIBRARIES} 
                                      ${Boost_LIBRARIES} 
                                      ${VTK_LIBRARIES} 
-                                     #CGAL::CGAL
                                      )
 
+add_executable(collsion_volume_reconstruction src/collsion_volume_reconstruction.cpp)
+target_link_libraries(collsion_volume_reconstruction ${catkin_LIBRARIES} 
+                                                     ${PCL_LIBRARIES} 
+                                                     ${Boost_LIBRARIES} 
+                                                     )
 
