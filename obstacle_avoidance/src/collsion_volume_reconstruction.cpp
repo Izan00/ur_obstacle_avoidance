@@ -65,13 +65,13 @@ public:
         }
     };
 
-    void addCollisionObject(const std::string& object_name,const shape_msgs::Mesh& mesh, const std_msgs::Header& header)
+    void addCollisionObject(const std::vector<shape_msgs::Mesh> meshes, const std_msgs::Header header, const std::string object_name="workspace_collsions")
     {
         // Create CollisionObject
         moveit_msgs::CollisionObject collision_object;
         collision_object.header = header;
         collision_object.id = object_name;
-        collision_object.meshes.push_back(mesh);
+        collision_object.meshes=  meshes;
         collision_object.pose = Pose::ZeroPose();
 
         // Update the collision object in the MoveIt! planning scene
@@ -200,8 +200,6 @@ public:
         pcl::PointCloud<pcl::PointXYZ> cloud;
         pcl::fromROSMsg(*cloud_msg, cloud);
 
-        std::vector<std::string> current_collisions;
-
 		std::vector<pcl::PointCloud<pcl::PointXYZ>> clusters;
         std::vector<Eigen::Vector4f> centroids;
         
@@ -221,6 +219,8 @@ public:
         // Publish centroids in Rviz
         //publishCentroidsMarker(centroids, cloud_msg->header);
         
+        std::vector<shape_msgs::Mesh> meshes;
+
         // Process clusters
         for (size_t i = 0; i < centroids.size(); ++i)
         {
@@ -239,22 +239,20 @@ public:
             // Create mesh from cluster
             createMesh(clusterPtr, mesh, cluster_name);
             
-            // Update collision objec in planning scene
-            addCollisionObject(cluster_name,mesh, cloud_msg->header);
-
-            if(prev_collisions.size()>0)
-            {
-                prev_collisions.erase(prev_collisions.begin());
-            }
-            current_collisions.push_back(cluster_name);
+            meshes.push_back(mesh);
         }
 
-        // Remove collision objects from previos iteration
-        if(prev_collisions.size()>0)
+        
+        // Update collision objec in planning scene
+        addCollisionObject(meshes, cloud_msg->header, "workspace_collsions");
+
+        // Remove collision objects from previos iteration if clusters are empty
+        if(centroids.size()==0)
         {
-            planning_scene_interface.removeCollisionObjects(prev_collisions);
-            prev_collisions = current_collisions;
-        }   
+            std::vector<std::string> collisions;
+            collisions.push_back("workspace_collsions");
+            planning_scene_interface.removeCollisionObjects(collisions);
+        } 
     };
 
 private:
@@ -280,7 +278,6 @@ private:
 
     // Collisions
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-    std::vector<std::string> prev_collisions;
 };
 
 
@@ -289,7 +286,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "collsion_volume_reconstruction");
 
     ros::NodeHandle nh("~");
-    
+
     CollisionVolumeReconstructuion collsion_volume_reconstruction(nh);
 
     ros::spin();
