@@ -62,9 +62,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.name_recording_line_edit.textChanged[str].connect(self.setNameRecording)
         self.ui.start_recording_button.clicked.connect(self.startRecording)
         self.ui.stop_recording_button.clicked.connect(self.stopRecording)
-        self.ui.ChooseRobotcomboBox.currentIndexChanged.connect(self.chooseRobot)
+        #self.ui.ChooseRobotcomboBox.currentIndexChanged.connect(self.chooseRobot)
+        self.ui.IPLineEdit.textChanged[str].connect(self.setIPRobot)
         self.ui.stop_recording_button.setEnabled(False)
-
 
         # LEARNING WINDOW
 
@@ -154,7 +154,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
 
         # Front page params
-        self.robot = 'roslaunch roy_dmp ur3_with_dmp.launch'
+        self.robot = "roslaunch roy_dmp ur_with_dmp.launch robot_model='ur3'"
         self.IP = '10.10.73.235' #TODO repair getting IP from GUI
         self.sim = False
         self.process = QProcess(self)
@@ -205,25 +205,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def setIPRobot(self,text):
         self.IP = text
+
     def chooseRobot(self):
         text = self.ui.ChooseRobotcomboBox.currentText()
-        if text == 'UR3':
-            if self.sim:
-               self.robot = 'roslaunch roy_dmp ur3_gazebo_with_dmp.launch' 
-            else:
-                self.robot = 'roslaunch roy_dmp ur3_with_dmp.launch'
-        elif text == 'UR5':
-            if self.sim:
-                self.robot = 'roslaunch roy_dmp ur5_gazebo_with_dmp.launch'
-                self.linkName = "tool0"
-            else:
-                self.robot = 'roslaunch ur_gazebo ur5.launch'
-        elif text == 'UR10':
-            if self.sim:
-                self.robot = 'roslaunch roy_dmp ur10_gazebo_with_dmp.launch'
-                self.linkName = "tool0"
-            else:
-                self.robot = 'roslaunch ur_gazebo ur10.launch'
+        self.robot = "roslaunch roy_dmp ur_with_dmp.launch robot_model:='"+text.lower()+"' sim:="+str(self.sim).lower()+"robot_ip:="+self.IP
 
     def start_click(self):
         self.chooseRobot()
