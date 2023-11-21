@@ -7,18 +7,18 @@
     <x>0</x>
     <y>0</y>
     <width>1098</width>
-    <height>795</height>
+    <height>819</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_12">
+   <layout class="QVBoxLayout" name="verticalLayout_26">
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="page_1">
        <layout class="QGridLayout" name="gridLayout_3">
@@ -260,7 +260,7 @@ p, li { white-space: pre-wrap; }
                <enum>QTabWidget::Rounded</enum>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="Recording_tab">
                <attribute name="title">
@@ -688,948 +688,943 @@ p, li { white-space: pre-wrap; }
                 </item>
                </layout>
               </widget>
-              <widget class="QWidget" name="Execute_tab">
+              <widget class="QWidget" name="Execution">
+               <property name="layoutDirection">
+                <enum>Qt::LeftToRight</enum>
+               </property>
                <attribute name="title">
-                <string>Execute</string>
+                <string>Execution</string>
                </attribute>
-               <layout class="QGridLayout" name="gridLayout_31">
-                <item row="0" column="1">
-                 <widget class="QFrame" name="frame_28">
+               <layout class="QVBoxLayout" name="verticalLayout_29">
+                <item>
+                 <widget class="QFrame" name="frame_29">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>45</height>
+                   </size>
+                  </property>
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
                   </property>
                   <property name="frameShadow">
                    <enum>QFrame::Raised</enum>
                   </property>
-                  <property name="lineWidth">
-                   <number>0</number>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_3">
-                   <item>
-                    <widget class="QSplitter" name="splitter_19">
-                     <property name="orientation">
-                      <enum>Qt::Vertical</enum>
+                  <layout class="QGridLayout" name="gridLayout_11">
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_109">
+                     <property name="text">
+                      <string>Set active DMP</string>
                      </property>
-                     <widget class="QFrame" name="frame_29">
-                      <property name="minimumSize">
-                       <size>
-                        <width>0</width>
-                        <height>45</height>
-                       </size>
-                      </property>
-                      <property name="frameShape">
-                       <enum>QFrame::NoFrame</enum>
-                      </property>
-                      <property name="frameShadow">
-                       <enum>QFrame::Raised</enum>
-                      </property>
-                      <layout class="QGridLayout" name="gridLayout_7">
-                       <item row="0" column="0">
-                        <widget class="QLabel" name="label_23">
-                         <property name="text">
-                          <string>Set active DMP</string>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="1">
-                        <widget class="QComboBox" name="set_DMP_comboBox">
-                         <property name="minimumSize">
-                          <size>
-                           <width>200</width>
-                           <height>25</height>
-                          </size>
-                         </property>
-                        </widget>
-                       </item>
-                       <item row="0" column="2">
-                        <widget class="QPushButton" name="set_active_DMP_pushButton">
-                         <property name="minimumSize">
-                          <size>
-                           <width>0</width>
-                           <height>0</height>
-                          </size>
-                         </property>
-                         <property name="text">
-                          <string>set_active_dmp</string>
-                         </property>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                     <widget class="QTabWidget" name="tabWidget">
-                      <property name="currentIndex">
-                       <number>0</number>
-                      </property>
-                      <widget class="QWidget" name="jointspace_2">
-                       <attribute name="title">
-                        <string>Joint space</string>
-                       </attribute>
-                       <layout class="QHBoxLayout" name="horizontalLayout_2">
-                        <item>
-                         <widget class="QFrame" name="frame_32">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QVBoxLayout" name="verticalLayout_7">
-                           <item>
-                            <widget class="QLabel" name="label_25">
-                             <property name="font">
-                              <font>
-                               <weight>75</weight>
-                               <bold>true</bold>
-                              </font>
-                             </property>
-                             <property name="text">
-                              <string>Initial position (in radians)</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_11">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_6">
-                              <property name="text">
-                               <string>shoulder_pan_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_init_0_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_17">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_8">
-                              <property name="text">
-                               <string>shoulder_lift_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_init_1_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_28">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_9">
-                              <property name="text">
-                               <string>elbow_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_init_2_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_29">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_10">
-                              <property name="text">
-                               <string>wrist_1_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_init_3_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_21">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_11">
-                              <property name="text">
-                               <string>wrist_2_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_init_4_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_20">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_12">
-                              <property name="text">
-                               <string>wrist_3_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_init_5_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QPushButton" name="get_JS_init_robot_pushButton">
-                             <property name="text">
-                              <string>Retrieve from Robot</string>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                        <item>
-                         <widget class="QFrame" name="frame_33">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QVBoxLayout" name="verticalLayout_8">
-                           <item>
-                            <widget class="QLabel" name="label_26">
-                             <property name="font">
-                              <font>
-                               <weight>75</weight>
-                               <bold>true</bold>
-                              </font>
-                             </property>
-                             <property name="text">
-                              <string>Goal Position (in radians)</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_22">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_14">
-                              <property name="text">
-                               <string>shoulder_pan_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_goal_0_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_23">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_13">
-                              <property name="text">
-                               <string>shoulder_lift_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_goal_1_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_24">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_30">
-                              <property name="text">
-                               <string>elbow_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_goal_2_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_25">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_31">
-                              <property name="text">
-                               <string>wrist_1_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_goal_3_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_26">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_29">
-                              <property name="text">
-                               <string>wrist_2_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_goal_4_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_27">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_32">
-                              <property name="text">
-                               <string>wrist_3_joint</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_JointState_goal_5_lineEdit">
-                              <property name="maximumSize">
-                               <size>
-                                <width>80</width>
-                                <height>40</height>
-                               </size>
-                              </property>
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="placeholderText">
-                               <string>(-pi, pi)</string>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QPushButton" name="get_JS_goal_robot_pushButton">
-                             <property name="text">
-                              <string>Retrieve from robot</string>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                       </layout>
-                      </widget>
-                      <widget class="QWidget" name="cartesianSpace_2">
-                       <attribute name="title">
-                        <string>Cartesian Space</string>
-                       </attribute>
-                       <layout class="QHBoxLayout" name="horizontalLayout_4">
-                        <item>
-                         <widget class="QFrame" name="frame_6">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QVBoxLayout" name="verticalLayout_9">
-                           <item>
-                            <widget class="QLabel" name="label_27">
-                             <property name="font">
-                              <font>
-                               <weight>75</weight>
-                               <bold>true</bold>
-                              </font>
-                             </property>
-                             <property name="text">
-                              <string>Initial Pose (in meter)</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_30">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_7">
-                              <property name="text">
-                               <string>tran_x</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_init_tx_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_31">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_33">
-                              <property name="text">
-                               <string>tran_y</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_init_ty_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_39">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_34">
-                              <property name="text">
-                               <string>tran_z</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_init_tz_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_40">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_35">
-                              <property name="text">
-                               <string>ori_x</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_init_rx_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_41">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_36">
-                              <property name="text">
-                               <string>ori_y</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_init_ry_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_42">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_37">
-                              <property name="text">
-                               <string>ori_z</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_init_rz_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_43">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_38">
-                              <property name="text">
-                               <string>ori_w</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_init_w_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QPushButton" name="get_CS_init_robot_PB">
-                             <property name="text">
-                              <string>Retrieve from Robot</string>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                        <item>
-                         <widget class="QFrame" name="frame_35">
-                          <property name="frameShape">
-                           <enum>QFrame::StyledPanel</enum>
-                          </property>
-                          <property name="frameShadow">
-                           <enum>QFrame::Raised</enum>
-                          </property>
-                          <layout class="QVBoxLayout" name="verticalLayout_10">
-                           <item>
-                            <widget class="QLabel" name="label_28">
-                             <property name="font">
-                              <font>
-                               <weight>75</weight>
-                               <bold>true</bold>
-                              </font>
-                             </property>
-                             <property name="text">
-                              <string>Goal Pose (in meter)</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_32">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_42">
-                              <property name="text">
-                               <string>tran_x</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_goal_tx_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_33">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_45">
-                              <property name="text">
-                               <string>tran_y</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_goal_ty_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_34">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_41">
-                              <property name="text">
-                               <string>tran_z</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_goal_tz_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_35">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_40">
-                              <property name="text">
-                               <string>ori_x</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_goal_rx_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_36">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_44">
-                              <property name="text">
-                               <string>ori_y</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_goal_ry_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_37">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_39">
-                              <property name="text">
-                               <string>ori_z</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_goal_rz_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QSplitter" name="splitter_38">
-                             <property name="orientation">
-                              <enum>Qt::Horizontal</enum>
-                             </property>
-                             <widget class="QLabel" name="label_43">
-                              <property name="text">
-                               <string>ori_w</string>
-                              </property>
-                             </widget>
-                             <widget class="QLineEdit" name="set_CS_goal_w_lineEdit">
-                              <property name="maxLength">
-                               <number>6</number>
-                              </property>
-                              <property name="clearButtonEnabled">
-                               <bool>false</bool>
-                              </property>
-                             </widget>
-                            </widget>
-                           </item>
-                           <item>
-                            <widget class="QPushButton" name="get_CS_goal_robot_PB">
-                             <property name="text">
-                              <string>Retrieve from Robot</string>
-                             </property>
-                            </widget>
-                           </item>
-                          </layout>
-                         </widget>
-                        </item>
-                       </layout>
-                      </widget>
-                     </widget>
-                     <widget class="QFrame" name="frame_31">
-                      <property name="frameShape">
-                       <enum>QFrame::NoFrame</enum>
-                      </property>
-                      <property name="frameShadow">
-                       <enum>QFrame::Raised</enum>
-                      </property>
-                      <layout class="QGridLayout" name="gridLayout_23">
-                       <item row="1" column="0">
-                        <widget class="QFrame" name="frame_36">
-                         <property name="frameShape">
-                          <enum>QFrame::NoFrame</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Sunken</enum>
-                         </property>
-                         <layout class="QGridLayout" name="gridLayout_30">
-                          <item row="1" column="0">
-                           <widget class="QPushButton" name="execute_plan_pushButton">
-                            <property name="text">
-                             <string>EXECUTE PLAN</string>
-                            </property>
-                           </widget>
-                          </item>
-                          <item row="0" column="0">
-                           <widget class="QPushButton" name="execute_collisionCheck_PB">
-                            <property name="text">
-                             <string>Check collisions</string>
-                            </property>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                       <item row="0" column="0">
-                        <widget class="QFrame" name="frame_30">
-                         <property name="frameShape">
-                          <enum>QFrame::NoFrame</enum>
-                         </property>
-                         <property name="frameShadow">
-                          <enum>QFrame::Raised</enum>
-                         </property>
-                         <layout class="QVBoxLayout" name="verticalLayout_11">
-                          <item>
-                           <widget class="QSplitter" name="splitter_4">
-                            <property name="orientation">
-                             <enum>Qt::Horizontal</enum>
-                            </property>
-                            <widget class="QLabel" name="label_24">
-                             <property name="text">
-                              <string>tau</string>
-                             </property>
-                            </widget>
-                            <widget class="QLineEdit" name="set_tau_lineedit">
-                             <property name="maximumSize">
-                              <size>
-                               <width>16777215</width>
-                               <height>28</height>
-                              </size>
-                             </property>
-                             <property name="placeholderText">
-                              <string>Default: 1</string>
-                             </property>
-                             <property name="clearButtonEnabled">
-                              <bool>false</bool>
-                             </property>
-                            </widget>
-                           </widget>
-                          </item>
-                         </layout>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
                     </widget>
                    </item>
-                   <item>
-                    <widget class="QFrame" name="frame_5">
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="set_DMP_comboBox_3">
                      <property name="minimumSize">
                       <size>
-                       <width>500</width>
+                       <width>200</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="2">
+                    <widget class="QPushButton" name="set_active_DMP_pushButton_3">
+                     <property name="minimumSize">
+                      <size>
+                       <width>0</width>
                        <height>0</height>
                       </size>
                      </property>
+                     <property name="text">
+                      <string>set_active_dmp</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QTabWidget" name="tabWidget">
+                  <property name="currentIndex">
+                   <number>1</number>
+                  </property>
+                  <widget class="QWidget" name="jointspace_4">
+                   <attribute name="title">
+                    <string>Joint space</string>
+                   </attribute>
+                   <layout class="QHBoxLayout" name="horizontalLayout_6">
+                    <item>
+                     <widget class="QFrame" name="frame_43">
+                      <property name="frameShape">
+                       <enum>QFrame::StyledPanel</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Raised</enum>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_22">
+                       <item>
+                        <widget class="QLabel" name="label_79">
+                         <property name="font">
+                          <font>
+                           <weight>75</weight>
+                           <bold>true</bold>
+                          </font>
+                         </property>
+                         <property name="text">
+                          <string>Initial position (in radians)</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_74">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_80">
+                          <property name="text">
+                           <string>shoulder_pan_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_init_0_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_75">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_81">
+                          <property name="text">
+                           <string>shoulder_lift_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_init_1_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_76">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_82">
+                          <property name="text">
+                           <string>elbow_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_init_2_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_77">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_83">
+                          <property name="text">
+                           <string>wrist_1_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_init_3_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_78">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_84">
+                          <property name="text">
+                           <string>wrist_2_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_init_4_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_79">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_85">
+                          <property name="text">
+                           <string>wrist_3_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_init_5_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QPushButton" name="get_JS_init_robot_pushButton_3">
+                         <property name="text">
+                          <string>Retrieve from Robot</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QFrame" name="frame_44">
+                      <property name="frameShape">
+                       <enum>QFrame::StyledPanel</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Raised</enum>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_23">
+                       <item>
+                        <widget class="QLabel" name="label_86">
+                         <property name="font">
+                          <font>
+                           <weight>75</weight>
+                           <bold>true</bold>
+                          </font>
+                         </property>
+                         <property name="text">
+                          <string>Goal Position (in radians)</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_80">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_87">
+                          <property name="text">
+                           <string>shoulder_pan_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_goal_0_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_81">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_88">
+                          <property name="text">
+                           <string>shoulder_lift_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_goal_1_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_82">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_89">
+                          <property name="text">
+                           <string>elbow_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_goal_2_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_83">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_90">
+                          <property name="text">
+                           <string>wrist_1_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_goal_3_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_84">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_91">
+                          <property name="text">
+                           <string>wrist_2_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_goal_4_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_85">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_92">
+                          <property name="text">
+                           <string>wrist_3_joint</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_JointState_goal_5_lineEdit_3">
+                          <property name="maximumSize">
+                           <size>
+                            <width>80</width>
+                            <height>40</height>
+                           </size>
+                          </property>
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="placeholderText">
+                           <string>(-pi, pi)</string>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QPushButton" name="get_JS_goal_robot_pushButton_3">
+                         <property name="text">
+                          <string>Retrieve from robot</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                  <widget class="QWidget" name="cartesianSpace_4">
+                   <attribute name="title">
+                    <string>Cartesian Space</string>
+                   </attribute>
+                   <layout class="QHBoxLayout" name="horizontalLayout_7">
+                    <item>
+                     <widget class="QFrame" name="frame_10">
+                      <property name="frameShape">
+                       <enum>QFrame::StyledPanel</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Raised</enum>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_24">
+                       <item>
+                        <widget class="QLabel" name="label_93">
+                         <property name="font">
+                          <font>
+                           <weight>75</weight>
+                           <bold>true</bold>
+                          </font>
+                         </property>
+                         <property name="text">
+                          <string>Initial Pose (in meter)</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_86">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_94">
+                          <property name="text">
+                           <string>tran_x</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_init_tx_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_87">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_95">
+                          <property name="text">
+                           <string>tran_y</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_init_ty_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_88">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_96">
+                          <property name="text">
+                           <string>tran_z</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_init_tz_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_89">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_97">
+                          <property name="text">
+                           <string>ori_x</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_init_rx_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_90">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_98">
+                          <property name="text">
+                           <string>ori_y</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_init_ry_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_91">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_99">
+                          <property name="text">
+                           <string>ori_z</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_init_rz_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_92">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_100">
+                          <property name="text">
+                           <string>ori_w</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_init_w_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QPushButton" name="get_CS_init_robot_PB_3">
+                         <property name="text">
+                          <string>Retrieve from Robot</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QFrame" name="frame_45">
+                      <property name="frameShape">
+                       <enum>QFrame::StyledPanel</enum>
+                      </property>
+                      <property name="frameShadow">
+                       <enum>QFrame::Raised</enum>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_25">
+                       <item>
+                        <widget class="QLabel" name="label_101">
+                         <property name="font">
+                          <font>
+                           <weight>75</weight>
+                           <bold>true</bold>
+                          </font>
+                         </property>
+                         <property name="text">
+                          <string>Goal Pose (in meter)</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_93">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_102">
+                          <property name="text">
+                           <string>tran_x</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_goal_tx_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_94">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_103">
+                          <property name="text">
+                           <string>tran_y</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_goal_ty_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_95">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_104">
+                          <property name="text">
+                           <string>tran_z</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_goal_tz_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_96">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_105">
+                          <property name="text">
+                           <string>ori_x</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_goal_rx_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_97">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_106">
+                          <property name="text">
+                           <string>ori_y</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_goal_ry_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_98">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_107">
+                          <property name="text">
+                           <string>ori_z</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_goal_rz_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QSplitter" name="splitter_99">
+                         <property name="orientation">
+                          <enum>Qt::Horizontal</enum>
+                         </property>
+                         <widget class="QLabel" name="label_108">
+                          <property name="text">
+                           <string>ori_w</string>
+                          </property>
+                         </widget>
+                         <widget class="QLineEdit" name="set_CS_goal_w_lineEdit_3">
+                          <property name="maxLength">
+                           <number>6</number>
+                          </property>
+                          <property name="clearButtonEnabled">
+                           <bool>false</bool>
+                          </property>
+                         </widget>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QPushButton" name="get_CS_goal_robot_PB_3">
+                         <property name="text">
+                          <string>Retrieve from Robot</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QFrame" name="frame_31">
+                  <property name="frameShape">
+                   <enum>QFrame::NoFrame</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_25">
+                   <item row="1" column="0">
+                    <widget class="QFrame" name="frame_48">
                      <property name="frameShape">
                       <enum>QFrame::NoFrame</enum>
                      </property>
                      <property name="frameShadow">
-                      <enum>QFrame::Raised</enum>
+                      <enum>QFrame::Sunken</enum>
+                     </property>
+                     <layout class="QVBoxLayout" name="verticalLayout_27">
+                      <item>
+                       <widget class="QSplitter" name="splitter_102">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <widget class="QLabel" name="label_110">
+                         <property name="text">
+                          <string>tau</string>
+                         </property>
+                        </widget>
+                        <widget class="QLineEdit" name="set_tau_lineedit_3">
+                         <property name="maximumSize">
+                          <size>
+                           <width>16777215</width>
+                           <height>28</height>
+                          </size>
+                         </property>
+                         <property name="placeholderText">
+                          <string>Default: 1</string>
+                         </property>
+                         <property name="clearButtonEnabled">
+                          <bool>false</bool>
+                         </property>
+                        </widget>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="5" column="0">
+                    <widget class="QFrame" name="frame_46">
+                     <property name="frameShape">
+                      <enum>QFrame::NoFrame</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Sunken</enum>
+                     </property>
+                     <layout class="QGridLayout" name="gridLayout_33">
+                      <item row="0" column="1">
+                       <widget class="QPushButton" name="execute_collisionCheck_PB_3">
+                        <property name="text">
+                         <string>Check collisions</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="0" column="0">
+                       <widget class="QPushButton" name="execute_plan_pushButton_3">
+                        <property name="text">
+                         <string>EXECUTE PLAN</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QFrame" name="frame_47">
+                     <property name="frameShape">
+                      <enum>QFrame::NoFrame</enum>
+                     </property>
+                     <property name="frameShadow">
+                      <enum>QFrame::Sunken</enum>
                      </property>
                      <layout class="QGridLayout" name="gridLayout_6">
-                      <item row="0" column="0">
-                       <widget class="QWidget" name="space_for_rviz" native="true">
-                        <property name="minimumSize">
-                         <size>
-                          <width>0</width>
-                          <height>0</height>
-                         </size>
+                      <item row="0" column="1">
+                       <widget class="QSplitter" name="splitter_100">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
                         </property>
+                        <widget class="QCheckBox" name="safeStopCheckBox_3">
+                         <property name="text">
+                          <string>Enable movement detection safe stop</string>
+                         </property>
+                        </widget>
+                       </widget>
+                      </item>
+                      <item row="0" column="0">
+                       <widget class="QSplitter" name="splitter_101">
+                        <property name="orientation">
+                         <enum>Qt::Horizontal</enum>
+                        </property>
+                        <widget class="QCheckBox" name="avoidanceCheckBox_3">
+                         <property name="text">
+                          <string>Enable real time obstacle avoidance</string>
+                         </property>
+                        </widget>
                        </widget>
                       </item>
                      </layout>
@@ -1644,43 +1639,45 @@ p, li { white-space: pre-wrap; }
                <attribute name="title">
                 <string>Settings</string>
                </attribute>
-               <widget class="QSplitter" name="splitter_8">
+               <widget class="QWidget" name="">
                 <property name="geometry">
                  <rect>
                   <x>40</x>
                   <y>40</y>
-                  <width>257</width>
-                  <height>25</height>
+                  <width>267</width>
+                  <height>62</height>
                  </rect>
                 </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <widget class="QLabel" name="label_4">
-                 <property name="text">
-                  <string>Recording folder</string>
-                 </property>
-                </widget>
-                <widget class="QLineEdit" name="recording_folder_LE"/>
-               </widget>
-               <widget class="QSplitter" name="splitter_10">
-                <property name="geometry">
-                 <rect>
-                  <x>50</x>
-                  <y>90</y>
-                  <width>243</width>
-                  <height>25</height>
-                 </rect>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <widget class="QLabel" name="label_46">
-                 <property name="text">
-                  <string>Weights folder</string>
-                 </property>
-                </widget>
-                <widget class="QLineEdit" name="weight_folder_LE"/>
+                <layout class="QVBoxLayout" name="verticalLayout_28">
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout">
+                   <item>
+                    <widget class="QLabel" name="label_4">
+                     <property name="text">
+                      <string>Recording folder</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="recording_folder_LE"/>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_8">
+                   <item>
+                    <widget class="QLabel" name="label_46">
+                     <property name="text">
+                      <string>Weights folder</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QLineEdit" name="weight_folder_LE"/>
+                   </item>
+                  </layout>
+                 </item>
+                </layout>
                </widget>
               </widget>
              </widget>

@@ -6,12 +6,12 @@ import rospy
 from moveit_msgs.msg import RobotState, RobotTrajectory, DisplayRobotState
 from trajectory_msgs.msg import JointTrajectoryPoint, JointTrajectory
 from moveit_msgs.msg._DisplayRobotState import DisplayRobotState
-from std_msgs.msg import Bool, Int32
+from std_msgs.msg import Bool, Int32, Header
 import time
 from moveit_msgs.srv import  GetPositionIK
 from tf.transformations import *
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose, Point
 from nav_msgs.msg import Path
 import sys
 import os
@@ -21,6 +21,7 @@ import roslib#; roslib.load_manifest('ur_driver')
 import actionlib
 from trajectory_msgs.msg import *
 from math import pi
+import numpy as np
 
 DEFAULT_JOINT_STATES = '/joint_states'
 EXECUTE_KNOWN_TRAJ_SRV = '/execute_kinematic_path'
@@ -29,6 +30,7 @@ DEFAULT_IK_SERVICE = "/compute_ik"
 DEBUG_MODE =  True
 
 error_codes = {0:'SUCCESSFUL', -1:'INVALID_GOAL', -2:'INVALID_JOINTS', -3:'OLD_HEADER_TIMESTAMP', -4:'PATH_TOLERANCE_VIOLATED', -5:'GOAL_TOLERANCE_VIOLATED'}
+
 
 class motionExecution():
 
@@ -39,7 +41,9 @@ class motionExecution():
         self.sv = StateValidity()
         self.fk = ForwardKinematics()
         self.ik = InverseKinematics()
-        self.robot_state_collision_pub = rospy.Publisher('/robot_collision_state', DisplayRobotState,queue_size=1)
+        self.robot_state_collision_pub = rospy.Publisher('/robot_collision_state', DisplayRobotState, queue_size=1)
+        #self.robot_trajectory_pub = rospy.Publisher('/robot_global_trajectory', GlobalTrajectory, queue_size=10)
+        self.robot_trajectory_pub = rospy.Publisher('/robot_global_trajectory', JointTrajectory, queue_size=1)
         rospy.sleep(0.1) # Give time to the publisher to register
         #TODO: make ik_service_name a param to load from a yaml
         self.imitated_path_pub = rospy.Publisher("/imitated_path", Path, queue_size=1)
@@ -56,9 +60,15 @@ class motionExecution():
         rospy.Subscriber("/robot_safe_stop", Bool,self.safe_stop_callback)
         self.safe_stop = False
 
+        rospy.Subscriber("/robot_execution_status", Int32, self.execution_status_callback)
+        self.execution_status = 0 # 0-stopped 1-running 2-success 3-failed
+
     def safe_stop_callback(self, msg):
         self.safe_stop=msg.data
         #print('callback:',self.safe_stop)
+
+    def execution_status_callback(self, msg):
+        self.execution_status=msg.data
 
     def robotTrajectoryFromPlan(self, plan, joint_names):
         """Given a dmp plan (GetDMPPlanResponse) create a RobotTrajectory to be able to visualize what it consists and also
@@ -83,83 +93,75 @@ class motionExecution():
             groups_to_check = groups
         else:
             groups_to_check = ['manipulator'] # Automagic group deduction... giving a group that includes everything 
-        for traj_point in robot_trajectory.joint_trajectory.points:
-            rs = RobotState()
-            rs.joint_state.name = robot_trajectory.joint_trajectory.joint_names
-            rs.joint_state.position = traj_point.positions
-            for group in groups_to_check:
-                result = self.sv.getStateValidity(rs,group)
-                if not result.valid:
-                    rospy.logerr("Trajectory is not valid at point (RobotState):" + str(rs) + "with result of StateValidity: " + str(result))
-                    rospy.logerr("published in /robot_collision_state the conflicting state")
-                    return False
-            fin_time = time.time()
+        results = [self.sv.getStateValidity(RobotState(joint_state=JointState(name=robot_trajectory.joint_trajectory.joint_names, position=traj_point.positions)),group).valid for traj_point in robot_trajectory.joint_trajectory.points for group in groups_to_check]
+        fin_time = time.time()
         rospy.logwarn("Trajectory validity of " + str(len(robot_trajectory.joint_trajectory.points)) + " points took " + str(fin_time - init_time))
+        if False in results: 
+            #rospy.logerr("Trajectory is not valid")    
+            conflict_id = np.argmin(np.array(results))
+            traj_point = robot_trajectory.joint_trajectory.points[conflict_id//len(groups_to_check)]
+            group = groups_to_check[conflict_id%len(groups_to_check)]
+            rs = RobotState(joint_state=JointState(name=robot_trajectory.joint_trajectory.joint_names, position=traj_point.positions))
+            conflict = self.sv.getStateValidity(rs, group)
+            rospy.logerr("Trajectory is not valid at point (RobotState):" + str(rs) + "with result of StateValidity: " + str(conflict))
+            rospy.logerr("published in /robot_collision_state the conflicting state")
+            return False
         return True
 
    
-            
+    def sendTrajectory(self,robot_trajectory,initial_pose,target_pose):
+        trajectory_msg = JointTrajectory()
+        satart_point = JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.0))
+        target_point = JointTrajectoryPoint(positions=target_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(robot_trajectory.plan.times[-1]))
+        trajectory = [JointTrajectoryPoint(positions=point.positions, velocities=point.velocities, time_from_start=rospy.Duration(time)) for point,time in zip(robot_trajectory.plan.points,robot_trajectory.plan.times)]
+        trajectory = [satart_point] + trajectory + [target_point]
+        trajectory_msg.header.stamp = rospy.Time.now()
+        rospy.loginfo('Sending trajectory...')
+        trajectory_msg.joint_names = self.arm
+        trajectory_msg.points = trajectory
+        self.robot_trajectory_pub.publish(trajectory_msg)
+        rospy.loginfo('Trajectory sent')
 
+    def recieveExecutionStatus(self):
+        return self.execution_status
 
-
-  
-    def sendTrajectoryAction(self,pla,_initial_pose,simulation):
+    def sendTrajectoryAction(self,pla,_initial_pose,simulation, safe_stop_enabled):
         if simulation:
-            print('Simulation')
             client = actionlib.SimpleActionClient('eff_joint_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
         else: #scaled_pos_joint_traj_controller
-            print('Real\n')
             client = actionlib.SimpleActionClient('scaled_pos_joint_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
-        
-        print('Waiting for server')
+        rospy.loginfo('Waiting for trajectory action server...')
         client.wait_for_server()
-        print('Server conected')
+        rospy.loginfo('Trajectory action server connected')
         g = FollowJointTrajectoryGoal()
         g.trajectory = JointTrajectory()
         g.trajectory.joint_names = self.arm
         initial_pose = _initial_pose
-        
         try:
-            times = pla.plan.times
-            d= 2.00
-            g.trajectory.points = [JointTrajectoryPoint(positions=initial_pose, velocities=[0]*6, time_from_start=rospy.Duration(0.0))]
-            for i in range(len(pla.plan.times)):
-                joint_value = pla.plan.points[i].positions
-                velocity = pla.plan.points[i].velocities
-                Q = [joint_value[0],joint_value[1],joint_value[2],joint_value[3],joint_value[4],joint_value[5]]
-                V = [velocity[0],velocity[1],velocity[2],velocity[3],velocity[4],velocity[5]]
-                T = times[i]
-                g.trajectory.points.append(JointTrajectoryPoint(positions=Q, velocities=V, time_from_start=rospy.Duration(T)))
-            print('Sending goal')
+            g.trajectory.points = [JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.0))]
+            g.trajectory.points += [JointTrajectoryPoint(positions=point.positions, velocities=point.velocities, time_from_start=rospy.Duration(time)) for point,time in zip(pla.plan.points,pla.plan.times)]
+            rospy.loginfo('Sending goal...')
             client.send_goal(g)
-            print('Goal sent')
-            
+            rospy.loginfo('Goal sent')
             # Check if the action has finished
             #client.wait_for_result(rospy.Duration(0))
-            safe_stop = 0
             while not rospy.is_shutdown():
-                #print('while:',self.safe_stop)
-                if self.safe_stop:
+                if self.safe_stop and safe_stop_enabled:
                     client.cancel_goal()
-                    
-                    print('Goal cancelled')
+                    rospy.logwarn('Robot stopped by safe stop')
                     return False
-                
                 result = client.get_result()
-                #res: error_code: -4 error_string: "shoulder_lift_joint path error -0.484287" 
-                #<class 'control_msgs.msg._FollowJointTrajectoryResult.FollowJointTrajectoryResult'>
                 if result != None: 
                     rospy.loginfo("Goal achieved: "+ error_codes[result.error_code])
-                    break  # Exit the loop when the action is completed
-
-
+                    return True # Exit the loop when the action is completed
         except KeyboardInterrupt:
             client.cancel_goal()
-            raise
+            rospy.logwarn('Robot stopped by user')
+            return False
         except:
-            print("Fault")
+            rospy.logerr("Robot movement failed")
             raise
-        return True
+        
 
     def fkPath(self,_position,_linkName):
         fk_link_names = _linkName
@@ -179,18 +181,11 @@ class motionExecution():
         ik_result = self.ik.getIK(group_name,ik_link_name,ps)
         return ik_result
 
-
     def pathPublish(self,_path,_linkName):
         imitated_path = Path()
         imitated_path.header.frame_id = "base_link"
-        for itr in range(len(_path.plan.points)):
-            joint_positions = _path.plan.points[itr].positions
-            path = self.fkPath(joint_positions,_linkName)
-            pose_stamped = PoseStamped()
-            pose_stamped.pose.position.x = path.position.x
-            pose_stamped.pose.position.y = path.position.y
-            pose_stamped.pose.position.z = path.position.z
-            imitated_path.poses.append(pose_stamped)
+        #imitated_path.header.stamp = rospy.Time.now()
+        imitated_path.poses = [PoseStamped(pose=Pose(position=Point(x=path.position.x,y=path.position.y,z=path.position.z))) for path in [self.fkPath(path_point.positions,_linkName) for path_point in _path.plan.points]] 
         self.imitated_path_pub.publish(imitated_path)
 
 
@@ -199,22 +194,6 @@ if __name__ == "__main__":
     rospy.init_node("test_execution_classes")
     rospy.loginfo("Initializing dmp_execution test.")
     me = motionExecution()
-    # mg = motionGeneration()
-    # joint_states = rospy.wait_for_message("joint_states",JointState)
-    # # initial_pose = [joint_states.position[2],joint_states.position[1],joint_states.position[0],joint_states.position[3],joint_states.position[4],joint_states.position[5]]
-    # initial_pose =[-0.2273033300982874, -2.298889462147848, -1.0177272001849573, -1.3976243177997034,  1.5502419471740723, 9.261386219655172]
-    # final_pose = [-2.3324595133410853, -2.2434170881854456, -1.1172669569598597, -1.3543337027179163, 1.5941375494003296, 7.169057373200552]
-    # pla = mg.getPlan(initial_pose,final_pose,-1,[],None,tau=5,dt=0.008)
-    # print(initial_pose)
-    # robot_traj = me.robotTrajectoryFromPlan(pla,me.arm)
-    # validity = me.checkTrajectoryValidity(robot_traj)
-    # print(validity)
-    # if(validity == True):
-    #     print("Valid trajectory")
-    #     st = me.sendTrajectoryAction(pla,initial_pose)
-    #     print("finished")
-    # elif(validity == False):
-    #     print("Not a valid trajectory")
     me.fkPath()
     
           

@@ -44,7 +44,7 @@ class motionGeneration():
 
    
 
-    def loadMotionFromJointStates(self, bagname, joints,_dt=000.8,_K=100,_D=2.0 * np.sqrt(100),_num_bases=None):
+    def loadMotionFromJointStates(self, bagname, joints,_dt=000.8,_K=100,_D=2.0 * np.sqrt(100),_num_bases=None, weight_name=None):
         """Load motion from the bag name given """
         # Get bag info
         file = join(self.rosbag_file_path,bagname)
@@ -89,8 +89,11 @@ class motionGeneration():
         rospy.loginfo("Final pose: " + str(self.motion_goal))
         time = self.info_bag['duration']
         rospy.loginfo("Time: " + str(time))
+        if weight_name == None:
+            weight_name = bagname
+        print(weight_name)
         #rospy.loginfo("DMP result: " + str(self.resp_from_makeLFDRequest))
-        motion_dict = self.saveMotionYAML(bagname + ".yaml", bagname, joints, self.motion_x0, self.motion_goal, self.resp_from_makeLFDRequest, time)
+        motion_dict = self.saveMotionYAML(weight_name + ".yaml", bagname, joints, self.motion_x0, self.motion_goal, self.resp_from_makeLFDRequest, time)
         return motion_dict        
 
 
@@ -109,7 +112,7 @@ class motionGeneration():
                         "final_pose" : final_pose,
                         "computed_dmp" : computed_dmp,
                         "duration" : time}
-        rospy.loginfo("motion_dict:\n" + str(motion_dict))
+        #rospy.loginfo("motion_dict:\n" + str(motion_dict))
         file = join(self.weights_file_path, yamlname)
         try:
             with open(file, "w") as f:

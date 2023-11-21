@@ -24,7 +24,6 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 from std_msgs.msg import Bool
 
 def get_joints():
-    
     js = rospy.wait_for_message("joint_states",JointState)
     return js
 
@@ -34,8 +33,6 @@ def get_joints():
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
-        
-        rospy.Subscriber("/robot_safe_stop", Bool,self.safe_stop_callback)
 
         super(ApplicationWindow, self).__init__()
 
@@ -71,6 +68,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # Learning buttons connect
         self.ui.load_EE_rec_radio_button.clicked.connect(self.loadEERec)
         self.ui.load_JS_rec_radio_button.clicked.connect(self.loadJSRec)
+        self.ui.load_JS_rec_radio_button.setChecked(True)
         # self.ui.dmp_dt_param_lineedit.setValidator(QDoubleValidator(0.0,99,5))
         self.ui.dmp_dt_param_lineedit.textChanged[str].connect(self.setdt)
         self.ui.dmp_K_param_lineedit.setValidator(QIntValidator(0,1000))
@@ -83,6 +81,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.load_name_rec_comboBox.currentIndexChanged.connect(self.loadNamerec)
         self.ui.generate_DMP_button.clicked.connect(self.generateDMP)
         
+        self.ui.save_name_dmp_lineedit.textChanged[str].connect(self.saveWeights)
+
 
         # EXECUTION WINDOW
 
@@ -137,6 +137,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # self.ui.set_tau_lineedit.setValidator(QIntValidator(1,1000))
         self.ui.set_tau_lineedit.textChanged[str].connect(self.setTau)
 
+        self.ui.avoidanceCheckBox.stateChanged.connect(self.setAvoidance)
+
+        self.ui.safeStopCheckBox.stateChanged.connect(self.setSafeStop)
 
         self.ui.execute_plan_pushButton.setEnabled(False)
         #Robot variables
@@ -154,18 +157,22 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
 
         # Front page params
-        self.robot = "roslaunch roy_dmp ur_with_dmp.launch robot_model='ur3'"
+        self.debug = False
+        self.robot = "roslaunch roy_dmp ur_with_dmp.launch"
         self.IP = '10.10.73.235' #TODO repair getting IP from GUI
         self.sim = False
+        self.robot_model = 'UR3'
         self.process = QProcess(self)
         self.linkName = "rg2_eef_link"
+        self.robot_ready = 0 # 0-not ready 1-ready 2-error
+
         #Param Recording page
         self.dmp_record = 0  # 0 for EE, 1 for JS, 2 for JS with Filtering
         self.dmp_record_name = "No_name"
         
         #Param Learning page
         self.dmp_record_name_load = "No_name"
-        self.dmp_weight_name = "No_name"
+        self.dmp_weight_name = None
         self.dmp_load_type = 1 # 0 for EE, 1 for JS, 2 for JS with filtering
         self.dmp_param_dt = 0.008
         self.dmp_param_K = 100
@@ -174,7 +181,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.directory_recording = os.getcwd()+"/src/roy_dmp/data/rosbag_recordings"
 
         # Param executing page
-        self.active_DMP = "No_name"
+        self.active_DMP = None
+        self.selected_DMP = 'No_name'
         self.initial_JS = [-0.2273033300982874, -2.298889462147848, -1.0177272001849573, -1.3976243177997034,  1.5502419471740723, 9.261386219655172]
         self.goal_JS = [-2.3324595133410853, -2.2434170881854456, -1.1172669569598597, -1.3543337027179163, 1.5941375494003296, 7.169057373200552]
         self.init_CS = PoseStamped()
@@ -182,9 +190,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.path_plan = []
         self.directory_weights = os.getcwd()+"/src/roy_dmp/data/weights"
         self.tau = 1*5
+        self.avoidance_enabled = False
+        self.safe_stop_enabled = False
         
-       
-
 
     def browse_recordings(self):
         self.ui.load_name_rec_comboBox.clear()
@@ -198,33 +206,85 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def setSimulation(self,state):
         if state == Qt.Checked:
             self.sim = True
-            print("True")
         else:
             self.sim = False
-            print("False")
+    
+    def setAvoidance(self,state):
+        if state == Qt.Checked:
+            self.avoidance_enabled = True
+            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
+            self.ui.execute_collisionCheck_PB.setEnabled(False)
+            self.ui.safeStopCheckBox.setEnabled(False)
+            ss_en = self.safe_stop_enabled
+            self.ui.safeStopCheckBox.setChecked(False)
+            self.safe_stop_enabled = ss_en
+            if self.active_DMP != None:
+                self.ui.execute_plan_pushButton.setEnabled(True)
+        else:
+            self.avoidance_enabled = False
+            self.ui.safeStopCheckBox.setEnabled(True)
+            if self.safe_stop_enabled:
+                self.ui.safeStopCheckBox.setChecked(True)
+            self.ui.execute_plan_pushButton.setEnabled(False)  
+            if self.active_DMP != None:
+                self.ui.execute_collisionCheck_PB.setEnabled(True)
+    
+    def setSafeStop(self,state):
+        if state == Qt.Checked:
+            self.safe_stop_enabled = True
+        else:
+            self.safe_stop_enabled = False
 
     def setIPRobot(self,text):
         self.IP = text
 
     def chooseRobot(self):
-        text = self.ui.ChooseRobotcomboBox.currentText()
-        self.robot = "roslaunch roy_dmp ur_with_dmp.launch robot_model:='"+text.lower()+"' sim:="+str(self.sim).lower()+"robot_ip:="+self.IP
-
+        self.robot_model = self.ui.ChooseRobotcomboBox.currentText()
+        
+    def on_ready_read(self):
+        output_data = self.process.readAll().data().decode('utf-8')
+        if self.debug:
+            print(output_data)
+        #if 'Action client not connected:' in output_data:
+        if 'Failed to connect to robot on IP' in output_data:   
+            if self.debug:
+                print('Execution failed, robot not connected')
+                
+            self.process.close()
+            self.robot_ready = 2
+        elif 'You can start planning now!' in output_data:
+            self.robot_ready = 1
+            if self.debug:
+                print('Robot connected')
+        
+    
     def start_click(self):
+        self.robot_ready = 0
         self.chooseRobot()
-        program = self.robot
+        program = self.robot+" robot_model:="+self.robot_model.lower()+" sim:="+str(self.sim).lower()+" robot_ip:="+self.IP
+        #self.process.setReadChannel(QProcess.StandardOutput) # QProcess.StandardError
+        self.process.setProcessChannelMode(QProcess.MergedChannels)
+        #self.process.setArguments(args) 
+        self.process.readyRead.connect(self.on_ready_read)
         self.process.start(program)
         self.ui.startButton.setEnabled(False)
         self.ui.startButton.setText("Connecting...")
         self.ui.startButton.setStyleSheet("color: black")
         QApplication.processEvents()
-        # check_srv=check_service()
-        print("Service test")
-        # print(check_srv)
-        print("service test")
-        self.ui.start_loadClasses_PB.setEnabled(True)
-        self.ui.startButton.setText("Connected to Robot")
-        self.ui.startButton.setStyleSheet("color: green")
+        while self.robot_ready == 0:
+            self.process.waitForReadyRead(1)
+        if self.robot_ready == 1:
+            self.ui.start_loadClasses_PB.setEnabled(True)
+            self.ui.startButton.setText("Connected to Robot")
+            self.ui.startButton.setStyleSheet("color: green")
+        elif self.robot_ready == 2:
+            self.ui.startButton.setText("Connection error (Click to reconnect)")
+            self.ui.startButton.setStyleSheet("color: red")
+            self.process.terminate()
+            self.process.waitForFinished()
+            self.process.kill()
+            self.process.start("rosnode kill -a")
+            self.ui.startButton.setEnabled(True)
 
     def shutdown_click(self):
         self.ui.shutDownButton.setStyleSheet("background-color: gray")
@@ -303,14 +363,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.dmp_record_name_load = self.ui.load_name_rec_comboBox.currentText()
         self.change_DMP_button()
     def saveWeights(self,text):
-        self.dmp_weight_name = str(text)
+        self.dmp_weight_name = text
+        print(self.dmp_weight_name)
         self.change_DMP_button()
     def generateDMP(self):
         try:
             if self.dmp_load_type == 0:
                 self.dmp_mg.loadMotionFromEndEffector
             else:
-                self.dmp_mg.loadMotionFromJointStates(self.dmp_record_name_load,self.arm,self.dmp_param_dt,self.dmp_param_K,self.dmp_param_D,self.dmp_param_basisfunc)
+                self.dmp_mg.loadMotionFromJointStates(self.dmp_record_name_load,self.arm,self.dmp_param_dt,self.dmp_param_K,self.dmp_param_D,self.dmp_param_basisfunc, self.dmp_weight_name)
             self.ui.generate_DMP_button.setStyleSheet("color: green")
             self.ui.generate_DMP_button.setText("DMP generated")
             self.ui.generate_DMP_button.setEnabled(False)
@@ -334,10 +395,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     
     def setActiveDMP(self):
         self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
-        self.active_DMP = self.ui.set_DMP_comboBox.currentText()
+        self.selected_DMP = self.ui.set_DMP_comboBox.currentText()
     def sendActiveDMP(self):
+        self.active_DMP = self.selected_DMP
         self.dmp_mg.loadMotionYAML(self.active_DMP)
-        self.ui.execute_collisionCheck_PB.setEnabled(True)
+        if self.avoidance_enabled:
+            self.ui.execute_collisionCheck_PB.setEnabled(False)
+            self.ui.execute_plan_pushButton.setEnabled(True)
+        else:
+            self.ui.execute_collisionCheck_PB.setEnabled(True)
+            self.ui.execute_plan_pushButton.setEnabled(False)
         self.ui.execute_collisionCheck_PB.setText("Collision Check")
     def setJS_init_0(self,text):
         try:
@@ -412,9 +479,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         except:
             print("Wrong Type")
     def getJS_init_robot(self):
-        print("waiting for message")
         # joint_states = rospy.wait_for_message("/joint_states", JointState)
-        # print(joint_states)
         self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
         joint_states = get_joints()
         self.initial_JS = [joint_states.position[2],joint_states.position[1],joint_states.position[0],joint_states.position[3],joint_states.position[4],joint_states.position[5]]
@@ -424,7 +489,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.set_JointState_init_3_lineEdit.setText(str(self.initial_JS[3]))
         self.ui.set_JointState_init_4_lineEdit.setText(str(self.initial_JS[4]))
         self.ui.set_JointState_init_5_lineEdit.setText(str(self.initial_JS[5]))
-        print(self.initial_JS)
     def getJS_goal_robot(self):
         # joint_states = rospy.wait_for_message("/joint_states", JointState)
         self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
@@ -563,22 +627,45 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
     def execute_plan(self):
         print('Executing plan')
-        st = self.dmp_me.sendTrajectoryAction(self.path_plan,self.initial_JS,self.sim)
-        print('Execute plan state: '+ str(st))
-        if not st:
-            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
-            self.ui.execute_plan_pushButton.setEnabled(False)
-            print('Retrieveing pose')
-            time.sleep(2)
-            self.getJS_init_robot() # TODO repair sim seg fault
-            time.sleep(2)
-            print('Pose retrieved')
+        self.ui.avoidanceCheckBox.setEnabled(False)
+        if self.avoidance_enabled:
+            init_time_WP = time.time()
+            initial_pose = self.initial_JS
+            final_pose = self.goal_JS
+            print("Start path plan")
+            init_time = time.time()
+            self.path_plan = self.dmp_mg.getPlan(initial_pose,final_pose,-1,[],None,self.tau,self.dmp_param_dt)
+            fin_time = time.time()
+            print ("Computing path done, took: " + str(fin_time - init_time))
+            # print(self.path_plan.plan.points[0].positions)
+            init_time_RT = time.time()
+            robot_traj = self.dmp_me.robotTrajectoryFromPlan(self.path_plan,self.dmp_me.arm)
+            fin_time_RT = time.time()
+            print ("Converting to Robot trajectory done, took: " + str(fin_time_RT - init_time_RT)) 
+            self.dmp_me.sendTrajectory(self.path_plan, self.initial_JS, self.goal_JS)
+            status = self.dmp_me.recieveExecutionStatus() # 0-stopped 1-running 2-success 3-failed
+            while status < 2: # While Stopped or Running
+                status = self.dmp_me.recieveExecutionStatus() 
+                time.sleep(1)
+            st = True if status == 2 else False # Success or Failed
+        else:
+            st = self.dmp_me.sendTrajectoryAction(self.path_plan,self.initial_JS,self.sim, self.safe_stop_enabled)
+            if not st:
+                self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
+                self.ui.execute_plan_pushButton.setEnabled(False)
+                print('Retrieveing pose')
+                time.sleep(2)
+                self.getJS_init_robot() # TODO repair sim seg fault
+                time.sleep(2)
+                print('Pose retrieved')
+        print('Execute plan state: '+ ('success' if st else 'fail'))
+        self.ui.avoidanceCheckBox.setEnabled(True)
 
     def collision_check(self):
         init_time_WP = time.time()
         initial_pose = self.initial_JS
         final_pose = self.goal_JS
-        print("start path plan")
+        print("Start path plan")
         init_time = time.time()
         self.path_plan = self.dmp_mg.getPlan(initial_pose,final_pose,-1,[],None,self.tau,self.dmp_param_dt)
         fin_time = time.time()
@@ -588,7 +675,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         robot_traj = self.dmp_me.robotTrajectoryFromPlan(self.path_plan,self.dmp_me.arm)
         fin_time_RT = time.time()
         print ("Converting to Robot trajectory done, took: " + str(fin_time_RT - init_time_RT))
-        print("checking collisions")
+        print("Checking collisions")
         init_time_CC = time.time()
         validity = self.dmp_me.checkTrajectoryValidity(robot_traj)
         fin_time_CC = time.time()
@@ -600,22 +687,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         print("The whole process took , "+ str(fin_time_PP - init_time_WP))
         # check_ik = self.dmp_me.get_IK_from_Quart(self.result_FK_goal)
         # print(check_ik)
-        print(validity)
         if validity:
-            print("OK")
+            print("Trajectory valid")
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: green")
             self.ui.execute_plan_pushButton.setEnabled(True)
         else:
-            print("not ok")
+            print("Trajectory invalid")
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
             self.ui.execute_plan_pushButton.setEnabled(False)
             
-    def safe_stop_callback(self, msg):
-        safe_stop=msg.data
-        if safe_stop:
-            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
-            self.ui.execute_plan_pushButton.setEnabled(False)
-
 class RViz(QWidget ):
 
     def __init__(self):

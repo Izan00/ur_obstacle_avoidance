@@ -10,11 +10,13 @@ sudo apt-get install ros-noetic-sensor-filters -y
 sudo apt-get install python3-pcl -y
 sudo apt-get install ros-noetic-moveit -y
 #sudo apt-get install libcgal-dev -y
+sudo apt install xdotool -y
 pip install numpy==1.20.3
 pip install -U scikit-learn
 pip install open3d
 pip install pyvista
 pip install pymeshfix
+pip install pynput
 
 rosdep install --from-paths src --ignore-src --rosdistro noetic -y --skip-keys dmp_generate_messages
 

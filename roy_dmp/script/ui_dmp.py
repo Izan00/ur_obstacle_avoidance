@@ -7,11 +7,14 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QWidget, QSizePolicy
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1098, 795)
+        MainWindow.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        MainWindow.setFixedSize(1400,1200)
+        #MainWindow.resize(1098, 795)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -124,10 +127,12 @@ class Ui_MainWindow(object):
         self.splitter_7.setOrientation(QtCore.Qt.Horizontal)
         self.splitter_7.setObjectName("splitter_7")
         self.label_15 = QtWidgets.QLabel(self.splitter_7)
-        self.label_15.setMaximumSize(QtCore.QSize(150, 16777215))
+        self.label_15.setMinimumSize(QtCore.QSize(150, 50))
+        self.label_15.setMaximumSize(QtCore.QSize(250, 50))
         self.label_15.setObjectName("label_15")
         self.name_recording_line_edit = QtWidgets.QLineEdit(self.splitter_7)
-        self.name_recording_line_edit.setMaximumSize(QtCore.QSize(16777215, 25))
+        self.name_recording_line_edit.setMaximumSize(QtCore.QSize(16777215, 50))
+        self.name_recording_line_edit.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Fixed)
         self.name_recording_line_edit.setText("")
         self.name_recording_line_edit.setObjectName("name_recording_line_edit")
         self.verticalLayout_3.addWidget(self.splitter_7)
@@ -312,37 +317,32 @@ class Ui_MainWindow(object):
         self.Tab.addTab(self.Generate_tab, "")
         self.Execute_tab = QtWidgets.QWidget()
         self.Execute_tab.setObjectName("Execute_tab")
-        self.gridLayout_31 = QtWidgets.QGridLayout(self.Execute_tab)
+
+        self.gridLayout_31 = QtWidgets.QVBoxLayout(self.Execute_tab)
         self.gridLayout_31.setObjectName("gridLayout_31")
-        self.frame_28 = QtWidgets.QFrame(self.Execute_tab)
-        self.frame_28.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.frame_28.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frame_28.setLineWidth(0)
-        self.frame_28.setObjectName("frame_28")
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout(self.frame_28)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.splitter_19 = QtWidgets.QSplitter(self.frame_28)
-        self.splitter_19.setOrientation(QtCore.Qt.Vertical)
-        self.splitter_19.setObjectName("splitter_19")
-        self.frame_29 = QtWidgets.QFrame(self.splitter_19)
+
+        self.frame_29 = QtWidgets.QFrame(self.Execute_tab)
         self.frame_29.setMinimumSize(QtCore.QSize(0, 45))
         self.frame_29.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame_29.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_29.setObjectName("frame_29")
-        self.gridLayout_7 = QtWidgets.QGridLayout(self.frame_29)
+        self.gridLayout_31.addWidget(self.frame_29)
+        self.gridLayout_7 = QtWidgets.QHBoxLayout(self.frame_29)
         self.gridLayout_7.setObjectName("gridLayout_7")
         self.label_23 = QtWidgets.QLabel(self.frame_29)
         self.label_23.setObjectName("label_23")
-        self.gridLayout_7.addWidget(self.label_23, 0, 0, 1, 1)
+        self.label_23.setMinimumSize(QtCore.QSize(200, 45))
+        self.gridLayout_7.addWidget(self.label_23)
         self.set_DMP_comboBox = QtWidgets.QComboBox(self.frame_29)
-        self.set_DMP_comboBox.setMinimumSize(QtCore.QSize(200, 25))
+        self.set_DMP_comboBox.setMinimumSize(QtCore.QSize(200, 45))
         self.set_DMP_comboBox.setObjectName("set_DMP_comboBox")
-        self.gridLayout_7.addWidget(self.set_DMP_comboBox, 0, 1, 1, 1)
+        self.set_DMP_comboBox.setSizePolicy(sizePolicy)
+        self.gridLayout_7.addWidget(self.set_DMP_comboBox)
         self.set_active_DMP_pushButton = QtWidgets.QPushButton(self.frame_29)
-        self.set_active_DMP_pushButton.setMinimumSize(QtCore.QSize(0, 0))
+        self.set_active_DMP_pushButton.setMinimumSize(QtCore.QSize(0, 45))
         self.set_active_DMP_pushButton.setObjectName("set_active_DMP_pushButton")
-        self.gridLayout_7.addWidget(self.set_active_DMP_pushButton, 0, 2, 1, 1)
-        self.tabWidget = QtWidgets.QTabWidget(self.splitter_19)
+        self.gridLayout_7.addWidget(self.set_active_DMP_pushButton)
+        self.tabWidget = QtWidgets.QTabWidget(self.Execute_tab)
         self.tabWidget.setObjectName("tabWidget")
         self.jointspace_2 = QtWidgets.QWidget()
         self.jointspace_2.setObjectName("jointspace_2")
@@ -353,6 +353,7 @@ class Ui_MainWindow(object):
         self.frame_32.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_32.setObjectName("frame_32")
         self.verticalLayout_7 = QtWidgets.QVBoxLayout(self.frame_32)
+        self.gridLayout_31.addWidget(self.tabWidget)
         self.verticalLayout_7.setObjectName("verticalLayout_7")
         self.label_25 = QtWidgets.QLabel(self.frame_32)
         font = QtGui.QFont()
@@ -694,32 +695,39 @@ class Ui_MainWindow(object):
         self.verticalLayout_10.addWidget(self.get_CS_goal_robot_PB)
         self.horizontalLayout_4.addWidget(self.frame_35)
         self.tabWidget.addTab(self.cartesianSpace_2, "")
-        self.frame_31 = QtWidgets.QFrame(self.splitter_19)
+        
+        self.frame_31 = QtWidgets.QFrame(self.Execute_tab)
         self.frame_31.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame_31.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_31.setObjectName("frame_31")
         self.gridLayout_23 = QtWidgets.QGridLayout(self.frame_31)
         self.gridLayout_23.setObjectName("gridLayout_23")
-        self.frame_36 = QtWidgets.QFrame(self.frame_31)
-        self.frame_36.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.frame_36.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.frame_36.setObjectName("frame_36")
-        self.gridLayout_30 = QtWidgets.QGridLayout(self.frame_36)
-        self.gridLayout_30.setObjectName("gridLayout_30")
-        self.execute_plan_pushButton = QtWidgets.QPushButton(self.frame_36)
+        
+        self.execute_plan_pushButton = QtWidgets.QPushButton(self.frame_31)
         self.execute_plan_pushButton.setObjectName("execute_plan_pushButton")
-        self.gridLayout_30.addWidget(self.execute_plan_pushButton, 1, 0, 1, 1)
-        self.execute_collisionCheck_PB = QtWidgets.QPushButton(self.frame_36)
+        self.gridLayout_23.addWidget(self.execute_plan_pushButton, 2, 1, 1, 1)
+        
+        self.execute_collisionCheck_PB = QtWidgets.QPushButton(self.frame_31)
         self.execute_collisionCheck_PB.setObjectName("execute_collisionCheck_PB")
-        self.gridLayout_30.addWidget(self.execute_collisionCheck_PB, 0, 0, 1, 1)
-        self.gridLayout_23.addWidget(self.frame_36, 1, 0, 1, 1)
-        self.frame_30 = QtWidgets.QFrame(self.frame_31)
-        self.frame_30.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.frame_30.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frame_30.setObjectName("frame_30")
-        self.verticalLayout_11 = QtWidgets.QVBoxLayout(self.frame_30)
-        self.verticalLayout_11.setObjectName("verticalLayout_11")
-        self.splitter_4 = QtWidgets.QSplitter(self.frame_30)
+        self.gridLayout_23.addWidget(self.execute_collisionCheck_PB, 2, 0, 1, 1)
+
+        self.splitter_45 = QtWidgets.QSplitter(self.frame_31)
+        self.splitter_45.setOrientation(QtCore.Qt.Horizontal)
+        self.splitter_45.setObjectName("splitter_44")
+        self.safeStopCheckBox = QtWidgets.QCheckBox(self.splitter_45)
+        self.safeStopCheckBox.setMaximumSize(QtCore.QSize(16777215, 28))
+        self.safeStopCheckBox.setObjectName("safeStopCheckBox")
+        self.gridLayout_23.addWidget(self.splitter_45, 1, 0, 1, 1)
+
+        self.splitter_44 = QtWidgets.QSplitter(self.frame_31)
+        self.splitter_44.setOrientation(QtCore.Qt.Horizontal)
+        self.splitter_44.setObjectName("splitter_44")
+        self.avoidanceCheckBox = QtWidgets.QCheckBox(self.splitter_44)
+        self.avoidanceCheckBox.setMaximumSize(QtCore.QSize(16777215, 28))
+        self.avoidanceCheckBox.setObjectName("avoidanceCheckBox")
+        self.gridLayout_23.addWidget(self.splitter_44, 1, 1, 1, 1)
+
+        self.splitter_4 = QtWidgets.QSplitter(self.frame_31)
         self.splitter_4.setOrientation(QtCore.Qt.Horizontal)
         self.splitter_4.setObjectName("splitter_4")
         self.label_24 = QtWidgets.QLabel(self.splitter_4)
@@ -728,10 +736,10 @@ class Ui_MainWindow(object):
         self.set_tau_lineedit.setMaximumSize(QtCore.QSize(16777215, 28))
         self.set_tau_lineedit.setClearButtonEnabled(False)
         self.set_tau_lineedit.setObjectName("set_tau_lineedit")
-        self.verticalLayout_11.addWidget(self.splitter_4)
-        self.gridLayout_23.addWidget(self.frame_30, 0, 0, 1, 1)
-        self.horizontalLayout_3.addWidget(self.splitter_19)
-        self.frame_5 = QtWidgets.QFrame(self.frame_28)
+        self.gridLayout_23.addWidget(self.splitter_4, 0, 0, 1, 1)
+
+        self.gridLayout_31.addWidget(self.frame_31)
+        '''
         self.frame_5.setMinimumSize(QtCore.QSize(500, 0))
         self.frame_5.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.frame_5.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -742,27 +750,39 @@ class Ui_MainWindow(object):
         self.space_for_rviz.setMinimumSize(QtCore.QSize(0, 0))
         self.space_for_rviz.setObjectName("space_for_rviz")
         self.gridLayout_6.addWidget(self.space_for_rviz, 0, 0, 1, 1)
-        self.horizontalLayout_3.addWidget(self.frame_5)
-        self.gridLayout_31.addWidget(self.frame_28, 0, 1, 1, 1)
+        self.gridLayout_31.addWidget(self.frame_5)
+        '''
         self.Tab.addTab(self.Execute_tab, "")
         self.Settings_tab = QtWidgets.QWidget()
         self.Settings_tab.setObjectName("Settings_tab")
-        self.splitter_8 = QtWidgets.QSplitter(self.Settings_tab)
-        self.splitter_8.setGeometry(QtCore.QRect(40, 40, 257, 25))
-        self.splitter_8.setOrientation(QtCore.Qt.Horizontal)
-        self.splitter_8.setObjectName("splitter_8")
-        self.label_4 = QtWidgets.QLabel(self.splitter_8)
+        
+        self.frame_s = QtWidgets.QFrame(self.Settings_tab)
+        self.frame_s.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.frame_s.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_s.setObjectName("frame_31")
+        self.gridLayout_s = QtWidgets.QGridLayout(self.frame_s)
+        self.gridLayout_s.setObjectName("gridLayout_s")
+
+        self.label_4 = QtWidgets.QLabel(self.frame_s)
         self.label_4.setObjectName("label_4")
-        self.recording_folder_LE = QtWidgets.QLineEdit(self.splitter_8)
+        self.label_4.setMinimumSize(QtCore.QSize(100, 0))
+        self.gridLayout_s.addWidget(self.label_4, 0, 0, 1, 1)
+
+        self.recording_folder_LE = QtWidgets.QLineEdit(self.frame_s)
         self.recording_folder_LE.setObjectName("recording_folder_LE")
-        self.splitter_10 = QtWidgets.QSplitter(self.Settings_tab)
-        self.splitter_10.setGeometry(QtCore.QRect(50, 90, 243, 25))
-        self.splitter_10.setOrientation(QtCore.Qt.Horizontal)
-        self.splitter_10.setObjectName("splitter_10")
-        self.label_46 = QtWidgets.QLabel(self.splitter_10)
+        self.recording_folder_LE.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.gridLayout_s.addWidget(self.recording_folder_LE, 0, 1, 1, 1)
+
+        self.label_46 = QtWidgets.QLabel(self.frame_s)
         self.label_46.setObjectName("label_46")
-        self.weight_folder_LE = QtWidgets.QLineEdit(self.splitter_10)
+        self.label_46.setMinimumSize(QtCore.QSize(100, 0))
+        self.gridLayout_s.addWidget(self.label_46, 1, 0, 1, 1)
+
+        self.weight_folder_LE = QtWidgets.QLineEdit(self.frame_s)
         self.weight_folder_LE.setObjectName("weight_folder_LE")
+        self.weight_folder_LE.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.gridLayout_s.addWidget(self.weight_folder_LE, 1, 1, 1, 1)
+
         self.Tab.addTab(self.Settings_tab, "")
         self.gridLayout_13.addWidget(self.splitter_12, 0, 0, 1, 1)
         self.gridLayout_18.addWidget(self.frame_21, 0, 0, 1, 1)
@@ -802,23 +822,26 @@ class Ui_MainWindow(object):
         self.textEdit.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Ubuntu\'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:24pt; font-weight:600;\">Welcome to my robot DMP application.</span></p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"</style></head><body style=\" font-family:\'Ubuntu\'; font-size:8pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:12pt; font-weight:600;\">Welcome to my robot DMP application.</span></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">The goal of this application is reduce the steppingstone that non-experts has to start working with robots. Ths is done by implementing Dynamic Movement Primitives and combine them with an intuitiv graphical user interface. The application is currently developed for use on Universal Robots, and have been testet on the UR3. It can be used both on real robots and in a simulation.</p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">The new version of the system includes feedback with the workspace to furhter imporve the safety measures. Collison check with automatically updated workspace objects, safety stop when movement of objects in the workspace, and obstacle avoidance of dynamic objects.</p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">This application is developed as a part of my Master thesis at Universitat Politecnica de Catalunya .</p>\n"
 "<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Author: Roy Ove Eriksen</p>\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Date: Autumn 2020</p></body></html>"))
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Author: Roy Ove Eriksen              Date: Autumn 2020</p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Developed the continuation of this work as a part of my Master thesis at Universitat Politecnica de Catalunya & Universitat de Barcelona & Universitat Rovira i Virgili.</p>\n"
+"<p align=\"center\" style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Author: Izan Leal Garcia             Date: Jauary 2024<</p>\n"
+
+"</body></html>"))
         self.RobotIPLabel.setText(_translate("MainWindow", "Robot IP:"))
         self.IPLineEdit.setPlaceholderText(_translate("MainWindow", "10.10.73.234"))
         self.simulationCheckBox.setText(_translate("MainWindow", "Simulation"))
@@ -911,6 +934,8 @@ class Ui_MainWindow(object):
         self.execute_collisionCheck_PB.setText(_translate("MainWindow", "Check collisions"))
         self.label_24.setText(_translate("MainWindow", "tau"))
         self.set_tau_lineedit.setPlaceholderText(_translate("MainWindow", "Default: 1"))
+        self.avoidanceCheckBox.setText(_translate("MainWindow", "Enable real time obstacle avoidance"))
+        self.safeStopCheckBox.setText(_translate("MainWindow", "Enable movement detection safe stop"))
         self.Tab.setTabText(self.Tab.indexOf(self.Execute_tab), _translate("MainWindow", "Execute"))
         self.label_4.setText(_translate("MainWindow", "Recording folder"))
         self.label_46.setText(_translate("MainWindow", "Weights folder"))
