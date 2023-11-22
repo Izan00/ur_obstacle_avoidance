@@ -82,12 +82,20 @@
   <build_export_depend>pcl_ros</build_export_depend>
   <exec_depend>pcl_ros</exec_depend>
 
-  <!--sensor_msgs tf2_ros pcl_ros std_msgs sensor_msgs pcl_ros visualization_msgs moveit_core moveit_ros_planning_interface moveit_ros_planning-->
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>urdf</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
 
+  <build_depend>trajectory_msgs</build_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_generation</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <!-- Other tools can request additional information be placed here -->
-
+  <gazebo_ros
+  gazebo_model_path="${prefix}/models"/>
   </export>
 </package>

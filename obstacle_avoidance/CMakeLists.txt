@@ -17,6 +17,18 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_ros_planning_interface
   moveit_ros_planning
   visualization_msgs
+
+  message_generation
+)
+
+add_message_files(
+  FILES
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  trajectory_msgs
 )
 
 find_package(PCL 1.7 REQUIRED)
@@ -36,6 +48,9 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+install(DIRECTORY launch models
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
 add_executable(workspace_filter src/workspace_filter.cpp)
 target_link_libraries(workspace_filter ${catkin_LIBRARIES})
 
@@ -46,9 +61,12 @@ target_link_libraries(safety_check ${catkin_LIBRARIES}
                                      ${VTK_LIBRARIES} 
                                      )
 
-add_executable(collsion_volume_reconstruction src/collsion_volume_reconstruction.cpp)
-target_link_libraries(collsion_volume_reconstruction ${catkin_LIBRARIES} 
+add_executable(collision_volume_reconstruction src/collision_volume_reconstruction.cpp)
+target_link_libraries(collision_volume_reconstruction ${catkin_LIBRARIES} 
                                                      ${PCL_LIBRARIES} 
                                                      ${Boost_LIBRARIES} 
                                                      )
+
+add_executable(collision_check src/collision_check.cpp)
+target_link_libraries(collision_check ${catkin_LIBRARIES})
 
