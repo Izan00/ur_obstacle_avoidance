@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
+  AvoidanceExecute.msg
 )
 
 generate_messages(
@@ -69,4 +70,8 @@ target_link_libraries(collision_volume_reconstruction ${catkin_LIBRARIES}
 
 add_executable(collision_check src/collision_check.cpp)
 target_link_libraries(collision_check ${catkin_LIBRARIES})
+add_dependencies(collision_check ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(move_test src/move_test.cpp)
+target_link_libraries(move_test ${catkin_LIBRARIES})
+add_dependencies(move_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

@@ -629,6 +629,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         print('Executing plan')
         self.ui.avoidanceCheckBox.setEnabled(False)
         if self.avoidance_enabled:
+            self.dmp_me.sendAvoidanceExecution(self.initial_JS,self.goal_JS,self.tau,self.dmp_param_dt)
+            '''
             init_time_WP = time.time()
             initial_pose = self.initial_JS
             final_pose = self.goal_JS
@@ -643,6 +645,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             fin_time_RT = time.time()
             print ("Converting to Robot trajectory done, took: " + str(fin_time_RT - init_time_RT)) 
             self.dmp_me.sendTrajectory(self.path_plan, self.initial_JS, self.goal_JS)
+            '''
             status = self.dmp_me.recieveExecutionStatus() # 0-stopped 1-running 2-success 3-failed
             while status < 2: # While Stopped or Running
                 status = self.dmp_me.recieveExecutionStatus() 

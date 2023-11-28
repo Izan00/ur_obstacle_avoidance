@@ -22,6 +22,7 @@ import actionlib
 from trajectory_msgs.msg import *
 from math import pi
 import numpy as np
+from obstacle_avoidance.msg import AvoidanceExecute
 
 DEFAULT_JOINT_STATES = '/joint_states'
 EXECUTE_KNOWN_TRAJ_SRV = '/execute_kinematic_path'
@@ -44,6 +45,7 @@ class motionExecution():
         self.robot_state_collision_pub = rospy.Publisher('/robot_collision_state', DisplayRobotState, queue_size=1)
         #self.robot_trajectory_pub = rospy.Publisher('/robot_global_trajectory', GlobalTrajectory, queue_size=10)
         self.robot_trajectory_pub = rospy.Publisher('/robot_global_trajectory', JointTrajectory, queue_size=1)
+        self.execute_avoidance_pub = rospy.Publisher('/avoidance_execute', AvoidanceExecute, queue_size=1)
         rospy.sleep(0.1) # Give time to the publisher to register
         #TODO: make ik_service_name a param to load from a yaml
         self.imitated_path_pub = rospy.Publisher("/imitated_path", Path, queue_size=1)
@@ -121,6 +123,20 @@ class motionExecution():
         trajectory_msg.points = trajectory
         self.robot_trajectory_pub.publish(trajectory_msg)
         rospy.loginfo('Trajectory sent')
+
+    def sendAvoidanceExecution(self, initial_pose, target_pose, tau, dt):
+
+        start_point = JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.0))
+        goal_point = JointTrajectoryPoint(positions=target_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.0))
+        
+        execute_msg = AvoidanceExecute()
+        execute_msg.header.stamp = rospy.Time.now()
+        execute_msg.start_point = start_point
+        execute_msg.target_point = goal_point
+        execute_msg.tau=tau
+        execute_msg.dt=dt
+
+        self.execute_avoidance_pub.publish(execute_msg)
 
     def recieveExecutionStatus(self):
         return self.execution_status
