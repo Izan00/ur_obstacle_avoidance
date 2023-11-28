@@ -3,6 +3,9 @@
 
   <arg name='sim' value='True'/>
 
+  <env name="GAZEBO_MODEL_PATH" value="$(find obstacle_avoidance)/models:$(optenv GAZEBO_MODEL_PATH)"/>
+  <env name="GAZEBO_MEDIA_PATH" value="$(find obstacle_avoidance)/models:$(optenv GAZEBO_MEDIA_PATH)"/>
+
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
   <node pkg="nodelet" type="nodelet" name="pcl_manager_nodelet" args="manager" output="screen" />
   <node pkg="nodelet" type="nodelet" name="voxel_grid_nodelet" args="load pcl/VoxelGrid pcl_manager_nodelet" output="screen">

@@ -112,7 +112,7 @@ def delete_model(model):
 
 def load_model(model):
     # Define the path to your SDF model file (e.g., cube.sdf)
-    model_path = os.path.join(os.getcwd(),"src/obstacle_avoidance/models/"+model+".sdf")
+    model_path = os.path.join(os.getcwd(),"src/obstacle_avoidance/models/"+model+"/model.sdf")
     
     # Set the pose of the cube
     cube_pose = Pose()
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     rospy.init_node('load_obstacle')
 
-    model = ['cube', 'arm'][0]    
+    model = ['cube', 'arm'][1]    
     
     pose_increment = 0.01 # in m
     time_sleep = 0.1
