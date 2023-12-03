@@ -212,6 +212,13 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def setAvoidance(self,state):
         if state == Qt.Checked:
             self.avoidance_enabled = True
+        else:
+            self.avoidance_enabled = False
+            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
+            self.ui.execute_plan_pushButton.setEnabled(False)  
+        '''
+        if state == Qt.Checked:
+            self.avoidance_enabled = True
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
             self.ui.execute_collisionCheck_PB.setEnabled(False)
             self.ui.safeStopCheckBox.setEnabled(False)
@@ -228,6 +235,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.ui.execute_plan_pushButton.setEnabled(False)  
             if self.active_DMP != None:
                 self.ui.execute_collisionCheck_PB.setEnabled(True)
+        '''
     
     def setSafeStop(self,state):
         if state == Qt.Checked:
@@ -399,13 +407,16 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def sendActiveDMP(self):
         self.active_DMP = self.selected_DMP
         self.dmp_mg.loadMotionYAML(self.active_DMP)
+        '''
         if self.avoidance_enabled:
             self.ui.execute_collisionCheck_PB.setEnabled(False)
             self.ui.execute_plan_pushButton.setEnabled(True)
         else:
             self.ui.execute_collisionCheck_PB.setEnabled(True)
             self.ui.execute_plan_pushButton.setEnabled(False)
-        self.ui.execute_collisionCheck_PB.setText("Collision Check")
+        '''
+        self.ui.execute_collisionCheck_PB.setEnabled(True)
+        self.ui.execute_collisionCheck_PB.setText("Generate plan")
     def setJS_init_0(self,text):
         try:
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
@@ -680,7 +691,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         print ("Converting to Robot trajectory done, took: " + str(fin_time_RT - init_time_RT))
         print("Checking collisions")
         init_time_CC = time.time()
-        validity = self.dmp_me.checkTrajectoryValidity(robot_traj)
+        validity = self.dmp_me.checkTrajectoryValidity(robot_traj, avoidance=self.avoidance_enabled)
         fin_time_CC = time.time()
         print ("Collision checks done, took: " + str(fin_time_CC - init_time_CC))
         init_time_PP = time.time()
@@ -693,10 +704,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         if validity:
             print("Trajectory valid")
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: green")
+            self.ui.execute_collisionCheck_PB.setText("Generate plan")
             self.ui.execute_plan_pushButton.setEnabled(True)
         else:
             print("Trajectory invalid")
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
+            self.ui.execute_collisionCheck_PB.setText("Invalid plan (Click to regenerate)")
             self.ui.execute_plan_pushButton.setEnabled(False)
             
 class RViz(QWidget ):

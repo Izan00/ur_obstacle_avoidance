@@ -85,7 +85,7 @@ class motionExecution():
             rt.joint_trajectory.points.append(jtp)
         return rt
 
-    def checkTrajectoryValidity(self, robot_trajectory, groups=[]):
+    def checkTrajectoryValidity(self, robot_trajectory, groups=[], avoidance=False):
         """Given a robot trajectory, deduce it's groups and check it's validity on each point of the traj
         returns True if valid, False otherwise
         It's considered not valid if any point is not valid"""
@@ -98,16 +98,20 @@ class motionExecution():
         results = [self.sv.getStateValidity(RobotState(joint_state=JointState(name=robot_trajectory.joint_trajectory.joint_names, position=traj_point.positions)),group).valid for traj_point in robot_trajectory.joint_trajectory.points for group in groups_to_check]
         fin_time = time.time()
         rospy.logwarn("Trajectory validity of " + str(len(robot_trajectory.joint_trajectory.points)) + " points took " + str(fin_time - init_time))
-        if False in results: 
-            #rospy.logerr("Trajectory is not valid")    
-            conflict_id = np.argmin(np.array(results))
+        
+        for conflict_id in np.where(np.array(results)==False)[0]:
             traj_point = robot_trajectory.joint_trajectory.points[conflict_id//len(groups_to_check)]
             group = groups_to_check[conflict_id%len(groups_to_check)]
             rs = RobotState(joint_state=JointState(name=robot_trajectory.joint_trajectory.joint_names, position=traj_point.positions))
             conflict = self.sv.getStateValidity(rs, group)
-            rospy.logerr("Trajectory is not valid at point (RobotState):" + str(rs) + "with result of StateValidity: " + str(conflict))
-            rospy.logerr("published in /robot_collision_state the conflicting state")
-            return False
+            if not avoidance:
+                rospy.logerr("Trajectory is not valid at point (RobotState):" + str(rs) + "with result of StateValidity: " + str(conflict))
+                rospy.logerr("published in /robot_collision_state the conflicting state")
+                return False
+            else:
+                for contacts in conflict.contacts:
+                    if not(contacts.contact_body_1=='workspace_collsions' or contacts.contacts[0].contact_body_2=='workspace_collsions'):
+                        return False
         return True
 
    
