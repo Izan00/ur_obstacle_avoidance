@@ -37,7 +37,7 @@
   </node>
 
   <!-- Run collsion volume reconstruction to add collsion objects in the virtual enviroment model -->
-  <node name="collsion_volume_reconstruction_node" pkg="obstacle_avoidance" type="collsion_volume_reconstruction" output="screen"> 
+  <node name="collision_volume_reconstruction_node" pkg="obstacle_avoidance" type="collision_volume_reconstruction" output="screen"> 
     <param name="leaf_size" type="double" value="0.01" />
     <param name="min_cluster_size" type="int" value="1"/>
     <param name="max_samples" type="int" value="25000"/>

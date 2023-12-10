@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_sensor_msgs
   geometry_msgs
   sensor_msgs
-  
+  eigen_conversions
   std_msgs
   moveit_core
   moveit_ros_planning_interface
@@ -30,6 +30,7 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   trajectory_msgs
+  geometry_msgs
 )
 
 find_package(PCL 1.7 REQUIRED)
@@ -75,3 +76,6 @@ add_dependencies(collision_check ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 add_executable(move_test src/move_test.cpp)
 target_link_libraries(move_test ${catkin_LIBRARIES})
 add_dependencies(move_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+#add_executable(dmp_move src/dmp_move.cpp)
+#target_link_libraries(dmp_move ${catkin_LIBRARIES})

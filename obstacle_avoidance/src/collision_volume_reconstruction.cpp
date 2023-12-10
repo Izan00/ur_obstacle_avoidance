@@ -220,11 +220,12 @@ public:
         //publishCentroidsMarker(centroids, cloud_msg->header);
         
         std::vector<shape_msgs::Mesh> meshes;
+        std::vector<std::string> current_collisions;
 
         // Process clusters
         for (size_t i = 0; i < centroids.size(); ++i)
         {
-            std::string cluster_name = "cluster_" + std::to_string(i);
+            std::string cluster_name = "collision_cluster_" + std::to_string(i);
             
             shape_msgs::Mesh mesh;
             pcl::PointCloud<pcl::PointXYZ>::Ptr clusterPtr;
@@ -238,21 +239,38 @@ public:
 
             // Create mesh from cluster
             createMesh(clusterPtr, mesh, cluster_name);
-            
+           
             meshes.push_back(mesh);
+            // Update collision objec in planning scene
+            addCollisionObject(meshes, cloud_msg->header, cluster_name);
+            
+            meshes.clear(); // for single item variant
+
+            current_collisions.push_back(cluster_name);
         }
 
-        
-        // Update collision objec in planning scene
-        addCollisionObject(meshes, cloud_msg->header, "workspace_collsions");
+        //addCollisionObject(meshes, cloud_msg->header, "workspace_collsions");
+
+        // Remove old objects
+        if(collisions.size()>current_collisions.size()){
+            std::vector<std::string> difference;
+            for (int i = collisions.size()-current_collisions.size(); i <collisions.size(); ++i)
+            {
+                difference.push_back(collisions[i]);
+            }
+            
+            planning_scene_interface.removeCollisionObjects(difference);
+        }
 
         // Remove collision objects from previos iteration if clusters are empty
         if(centroids.size()==0)
         {
-            std::vector<std::string> collisions;
-            collisions.push_back("workspace_collsions");
+            //std::vector<std::string> collisions;
+            //collisions.push_back("workspace_collsions");
             planning_scene_interface.removeCollisionObjects(collisions);
         } 
+        collisions.clear();
+        collisions = current_collisions;
     };
 
 private:
@@ -275,6 +293,8 @@ private:
     std::string mesh_algo; // d3d, d2d
     bool save_mesh;
     double alpha;
+
+    std::vector<std::string> collisions;
 
     // Collisions
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;

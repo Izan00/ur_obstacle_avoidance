@@ -1,0 +1,18 @@
+geometry_msgs/Pose[] demo
+
+geometry_msgs/Point[] obstacles
+
+float64 dt
+
+float64 execution_time
+
+int32 n_weights_per_dim
+
+float64 gamma
+
+float64 beta
+
+---
+
+geometry_msgs/Pose[] path
+

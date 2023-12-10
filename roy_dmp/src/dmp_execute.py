@@ -110,7 +110,7 @@ class motionExecution():
                 return False
             else:
                 for contacts in conflict.contacts:
-                    if not(contacts.contact_body_1=='workspace_collsions' or contacts.contacts[0].contact_body_2=='workspace_collsions'):
+                    if not('collision' in contacts.contact_body_1 or 'collision' in contacts.contact_body_2):
                         return False
         return True
 
