@@ -41,11 +41,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         # START WINDOW
         self.ui.simulationCheckBox.stateChanged.connect(self.setSimulation)
+        self.ui.rvizCheckBox.stateChanged.connect(self.setRviz)
         self.ui.stackedWidget.setCurrentIndex(0)
         self.ui.startButton.clicked.connect(self.start_click)
         self.ui.start_loadClasses_PB.clicked.connect(self.load_classes)
-        #self.RviZ = RViz() #TODO optimize to avoid crash
-        #self.ui.gridLayout_6.addWidget(self.RviZ)
         self.ui.Tab.currentChanged.connect(self.browse_recordings)
         self.ui.shutDownButton.clicked.connect(self.shutdown_click)
         self.ui.shutDownButton.setStyleSheet("background-color: red")
@@ -97,7 +96,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.ui.execute_collisionCheck_PB.clicked.connect(self.collision_check)
         
-        self.ui.execute_collisionCheck_PB.setText("Please set an active DMP first")
+        self.ui.execute_collisionCheck_PB.setText("Please set an active DMP")
         self.ui.execute_collisionCheck_PB.setEnabled(False)
 
         self.ui.execute_plan_pushButton.clicked.connect(self.execute_plan)
@@ -161,6 +160,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.robot = "roslaunch roy_dmp ur_with_dmp.launch"
         self.IP = '10.10.73.235' #TODO repair getting IP from GUI
         self.sim = False
+        self.rviz = False
         self.robot_model = 'UR3'
         self.process = QProcess(self)
         self.linkName = "rg2_eef_link"
@@ -208,6 +208,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.sim = True
         else:
             self.sim = False
+    
+    def setRviz(self,state):
+        if state == Qt.Checked:
+            self.rviz = True
+        else:
+            self.rviz = False
     
     def setAvoidance(self,state):
         if state == Qt.Checked:
@@ -293,6 +299,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.process.kill()
             self.process.start("rosnode kill -a")
             self.ui.startButton.setEnabled(True)
+        if self.rviz:
+            self.RviZ = RViz() #TODO optimize to avoid crash
+            self.ui.gridLayout_6.addWidget(self.RviZ)
 
     def shutdown_click(self):
         self.ui.shutDownButton.setStyleSheet("background-color: gray")
@@ -635,6 +644,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.dmp_mg = motionGeneration()
         self.dmp_me = motionExecution()
         self.ui.stackedWidget.setCurrentIndex(1)
+        if self.rviz:
+            self.ui.mainwindow.setFixedSize(2200,1300)
+            self.ui.frame_rviz.setVisible(True)
 
     def execute_plan(self):
         print('Executing plan')
@@ -721,7 +733,7 @@ class RViz(QWidget ):
         self.frame.initialize()
         reader = rviz.YamlConfigReader()
         config = rviz.Config()
-        reader.readFile( config, os.getcwd()+"/src/roy_dmp/resources/dmp_config.rviz" )
+        reader.readFile( config, os.getcwd()+"/src/roy_dmp/resources/dmp_config_old.rviz" )
         self.frame.load( config )
         self.setWindowTitle( config.mapGetChild( "Title" ).getValue() )
         self.frame.setMenuBar( None )
@@ -734,6 +746,7 @@ class RViz(QWidget ):
         h_layout = QHBoxLayout()
         layout.addLayout( h_layout )
         self.setLayout( layout )
+        
 
 
 
@@ -742,9 +755,9 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     application = ApplicationWindow()
     application.show()
-    # rviz = RViz()
-    # # rviz.resize( 500, 500 )
-    # rviz.show()
+    #rviz = RViz()
+    #rviz.resize( 500, 500 )
+    #rviz.show()
     sys.exit(app.exec_())
     
 
