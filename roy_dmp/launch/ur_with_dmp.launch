@@ -146,6 +146,14 @@
     <arg name="file" value="dmp.launch" />
   </include>
 
+  <group ns="cartesian">
+  <include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">
+    <arg name="time" value="2" />
+    <arg name="pkg" value="dmp" />
+    <arg name="file" value="dmp.launch" />
+  </include>
+  </group>
+
   <!-- Camera -->
   <group if="$(arg use_cam)">
     <group unless="$(arg sim_cam)">

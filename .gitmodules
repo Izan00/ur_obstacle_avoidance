@@ -14,3 +14,6 @@
 [submodule "robot_body_filter"]
 	path = robot_body_filter
 	url = https://github.com/peci1/robot_body_filter.git
+[submodule "dmp"]
+	path = dmp
+	url = https://github.com/Izan00/dmp.git

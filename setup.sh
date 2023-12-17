@@ -17,6 +17,7 @@ pip install open3d
 pip install pyvista
 pip install pymeshfix
 pip install pynput
+pip install transformations
 
 rosdep install --from-paths src --ignore-src --rosdistro noetic -y --skip-keys dmp_generate_messages
 

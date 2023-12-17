@@ -24,13 +24,13 @@ def is_terminal_focused():
 def on_press(key):
     if is_terminal_focused():
         pressed_keys[key.char]=1
-        print("           \r", end="")
+        #print("Obstacle pose: "+str(obstacle_pose)+"           \r", end="")
 
 def on_release(key):
     #print(key)
     if is_terminal_focused():
         pressed_keys[key.char]=0
-        print("           \r", end="")
+        #print("Obstacle pose: "+str(obstacle_pose)+"           \r", end="")
 
 def auto_move_model(model):
     # Create a service proxy for setting the model state in Gazebo
@@ -44,7 +44,7 @@ def auto_move_model(model):
         model_state.pose.position.x = 0.0  
         model_state.pose.position.y = 0.5+0.05*i  
         model_state.pose.position.z = 0.1+0.05*i
-
+        
         # Send the new model state to Gazebo
         try:
             set_model_state(model_state)
@@ -85,7 +85,11 @@ def move_model(model):
     if pressed_keys['d']==1:
         model_state.pose.position.x-=pose_increment
 
-    print("           \r", end="")
+    obstacle_pose =[round(model_state.pose.position.x,2),
+                    round(model_state.pose.position.y,2),
+                    round(model_state.pose.position.z,2)]
+    
+    print("Obstacle pose: "+str(obstacle_pose)+"           \r", end="")
 
     # Send the new model state to Gazebo
     try:
@@ -146,21 +150,25 @@ if __name__ == '__main__':
     # Moving speed pose_increment/sleep
 
     initial_pose = [0.0,0.5,0.1]
+    obstacle_pose = initial_pose
 
     pressed_keys = {'w':0,'s':0,'d':0,'a':0,'i':0,'k':0}
 
     listener = keyboard.Listener(on_press=on_press, on_release=on_release)
     listener.start()
 
+    
     try:
         delete_model(model)
     except:
         pass
 
+    
     try:
         load_model(model)
     except:
         pass
+    
 
     '''
     time.sleep(60)
@@ -173,7 +181,7 @@ if __name__ == '__main__':
     print('\n\n=========================================================================')
     print("      Welcome to the Joystick Control Interface")
     print('=========================================================================')
-    print("\n  Use the following keys for joystick actions:\n\n            w                       i\n         a  s  d                    k\n\n  Move along X and Y axes    Move along Z axis\n\n  Press 'ctrl+c' to finish and exit the program.")
+    print("\n  Use the following keys for joystick actions:\n\n            w                       i\n         a  s  d                    k\n\n  Move along X and Y axes    Move along Z axis\n\n  Press 'ctrl+c' to finish and exit the program.\n\n")
     
     while not rospy.is_shutdown():
         move_model(model)
