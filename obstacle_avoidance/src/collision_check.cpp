@@ -21,10 +21,29 @@
 #include<dmp/DMPData.h>
 #include<dmp/DMPPoint.h>
 
+#include <tf2_eigen/tf2_eigen.h>
+
 #include<cmath>
 #include<chrono>
 #include<thread>
 #include <algorithm>
+
+namespace
+{
+void ikCallbackFnAdapter(robot_state::RobotState* state, const robot_state::JointModelGroup* group,
+                        const robot_state::GroupStateValidityCallbackFn& constraint, const geometry_msgs::Pose& /*unused*/,
+                        const std::vector<double>& ik_sol, moveit_msgs::MoveItErrorCodes& error_code)
+{
+    const std::vector<unsigned int>& bij = group->getKinematicsSolverJointBijection();
+    std::vector<double> solution(bij.size());
+    for (std::size_t i = 0; i < bij.size(); ++i)
+        solution[bij[i]] = ik_sol[i];
+    if (constraint(state, group, &solution[0]))
+        error_code.val = moveit_msgs::MoveItErrorCodes::SUCCESS;
+    else
+        error_code.val = moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION;
+}
+};
 
 class CollsionCheck
 {
@@ -227,6 +246,229 @@ public:
         return distance;
     };
 
+    bool setFromIK(robot_state::RobotState robot_state,const robot_model::JointModelGroup* jmg, const EigenSTL::vector_Isometry3d& poses_in,
+                    const std::vector<std::string>& tips_in,
+                    const std::vector<std::vector<double> >& consistency_limit_sets, double timeout,
+                    const robot_state::GroupStateValidityCallbackFn& constraint,
+                    const kinematics::KinematicsQueryOptions& options)
+    {
+        // Error check
+        if (poses_in.size() != tips_in.size())
+        {
+            ROS_ERROR("Number of poses must be the same as number of tips");
+            return false;
+        }
+
+        // Load solver
+        const kinematics::KinematicsBaseConstPtr& solver = jmg->getSolverInstance();
+
+        // Check if this jmg has a solver
+        bool valid_solver = true;
+        if (!solver)
+        {
+            valid_solver = false;
+        }
+        // Check if this jmg's IK solver can handle multiple tips (non-chain solver)
+        else if (poses_in.size() > 1)
+        {
+            std::string error_msg;
+            if (!solver->supportsGroup(jmg, &error_msg))
+            {
+            // skirt around clang-diagnostic-potentially-evaluated-expression
+            const kinematics::KinematicsBase& solver_ref = *solver;
+            ROS_ERROR("Kinematics solver %s does not support joint group %s.  Error: %s",
+                            typeid(solver_ref).name(), jmg->getName().c_str(), error_msg.c_str());
+            valid_solver = false;
+            }
+        }
+
+        if (!valid_solver)
+        {
+        
+            ROS_ERROR("No kinematics solver instantiated for group '%s'", jmg->getName().c_str());
+            return false;
+        }
+
+        // Check that no, or only one set of consistency limits has been passed in, and choose that one
+        std::vector<double> consistency_limits;
+        if (consistency_limit_sets.size() > 1)
+        {
+            ROS_ERROR("Invalid number (%zu) of sets of consistency limits for a setFromIK request "
+                            "that is being solved by a single IK solver",
+                            consistency_limit_sets.size());
+            return false;
+        }
+        else if (consistency_limit_sets.size() == 1)
+            consistency_limits = consistency_limit_sets[0];
+
+        // ensure RobotState is up-to-date before employing it in the IK solver
+        robot_state.RobotState::update(false);
+
+        const std::vector<std::string>& solver_tip_frames = solver->getTipFrames();
+
+        // Track which possible tips frames we have filled in so far
+        std::vector<bool> tip_frames_used(solver_tip_frames.size(), false);
+
+        // Create vector to hold the output frames in the same order as solver_tip_frames
+        std::vector<geometry_msgs::Pose> ik_queries(solver_tip_frames.size());
+
+        // Bring each pose to the frame of the IK solver
+        for (std::size_t i = 0; i < poses_in.size(); ++i)
+        {
+            // Make non-const
+            Eigen::Isometry3d pose = poses_in[i];
+            std::string pose_frame = tips_in[i];
+
+            // Remove extra slash
+            if (!pose_frame.empty() && pose_frame[0] == '/')
+            pose_frame = pose_frame.substr(1);
+
+            // bring the pose to the frame of the IK solver
+            if (!robot_state.setToIKSolverFrame(pose, solver))
+            return false;
+
+            // try all of the solver's possible tip frames to see if they match with any of the passed-in pose tip frames
+            bool found_valid_frame = false;
+            std::size_t solver_tip_id;  // our current index
+            for (solver_tip_id = 0; solver_tip_id < solver_tip_frames.size(); ++solver_tip_id)
+            {
+            // Check if this tip frame is already accounted for
+            if (tip_frames_used[solver_tip_id])
+                continue;  // already has a pose
+
+            // check if the tip frame can be transformed via fixed transforms to the frame known to the IK solver
+            std::string solver_tip_frame = solver_tip_frames[solver_tip_id];
+
+            // remove the frame '/' if there is one, so we can avoid calling Transforms::sameFrame() which may copy strings
+            // more often that we need to
+            if (!solver_tip_frame.empty() && solver_tip_frame[0] == '/')
+                solver_tip_frame = solver_tip_frame.substr(1);
+
+            if (pose_frame != solver_tip_frame)
+            {
+                Eigen::Isometry3d pose_parent_to_frame;
+                auto* pose_parent = robot_state.RobotState::getRigidlyConnectedParentLinkModel(pose_frame, &pose_parent_to_frame, jmg);
+                if (!pose_parent)
+                {
+                ROS_ERROR_STREAM("Pose frame '" << pose_frame << "' does not exist.");
+                return false;
+                }
+                Eigen::Isometry3d tip_parent_to_tip;
+                auto* tip_parent = robot_state.RobotState::getRigidlyConnectedParentLinkModel(solver_tip_frame, &tip_parent_to_tip, jmg);
+                if (!tip_parent)
+                {
+                ROS_ERROR_STREAM("Solver tip frame '" << solver_tip_frame << "' does not exist.");
+                return false;
+                }
+                if (pose_parent == tip_parent)
+                {
+                // transform goal pose as target for solver_tip_frame (instead of pose_frame)
+                pose = pose * pose_parent_to_frame.inverse() * tip_parent_to_tip;
+                found_valid_frame = true;
+                break;
+                }
+            }
+            else
+            {
+                found_valid_frame = true;
+                break;
+            }
+            }  // end for solver_tip_frames
+
+            // Make sure one of the tip frames worked
+            if (!found_valid_frame)
+            {
+            ROS_ERROR("Cannot compute IK for query %zu pose reference frame '%s'", i, pose_frame.c_str());
+            // Debug available tip frames
+            std::stringstream ss;
+            for (solver_tip_id = 0; solver_tip_id < solver_tip_frames.size(); ++solver_tip_id)
+                ss << solver_tip_frames[solver_tip_id] << ", ";
+            ROS_ERROR( "Available tip frames: [%s]", ss.str().c_str());
+            return false;
+            }
+
+            // Remove that tip from the list of available tip frames because each can only have one pose
+            tip_frames_used[solver_tip_id] = true;
+
+            // Convert Eigen pose to geometry_msgs pose
+            geometry_msgs::Pose ik_query;
+            ik_query = tf2::toMsg(pose);
+
+            // Save into vectors
+            ik_queries[solver_tip_id] = ik_query;
+        }  // end for poses_in
+
+        // Create poses for all remaining tips a solver expects, even if not passed into this function
+        for (std::size_t solver_tip_id = 0; solver_tip_id < solver_tip_frames.size(); ++solver_tip_id)
+        {
+            // Check if this tip frame is already accounted for
+            if (tip_frames_used[solver_tip_id])
+            continue;  // already has a pose
+
+            // Process this tip
+            std::string solver_tip_frame = solver_tip_frames[solver_tip_id];
+
+            // remove the frame '/' if there is one, so we can avoid calling Transforms::sameFrame() which may copy strings more
+            // often that we need to
+            if (!solver_tip_frame.empty() && solver_tip_frame[0] == '/')
+            solver_tip_frame = solver_tip_frame.substr(1);
+
+            // Get the pose of a different EE tip link
+            Eigen::Isometry3d current_pose = robot_state.RobotState::getGlobalLinkTransform(solver_tip_frame);
+
+            // bring the pose to the frame of the IK solver
+            if (!robot_state.RobotState::setToIKSolverFrame(current_pose, solver))
+            return false;
+
+            // Convert Eigen pose to geometry_msgs pose
+            geometry_msgs::Pose ik_query;
+            ik_query = tf2::toMsg(current_pose);
+
+            // Save into vectors - but this needs to be ordered in the same order as the IK solver expects its tip frames
+            ik_queries[solver_tip_id] = ik_query;
+
+            // Remove that tip from the list of available tip frames because each can only have one pose
+            tip_frames_used[solver_tip_id] = true;
+        }
+
+        // if no timeout has been specified, use the default one
+        if (timeout < std::numeric_limits<double>::epsilon())
+            timeout = jmg->getDefaultIKTimeout();
+
+        // set callback function
+        robot_state::RobotState *robot_state_ptr = &robot_state;
+        kinematics::KinematicsBase::IKCallbackFn ik_callback_fn;
+        if (constraint)
+            ik_callback_fn = [robot_state_ptr, jmg, constraint](const geometry_msgs::Pose& pose, const std::vector<double>& joints,
+                                                    moveit_msgs::MoveItErrorCodes& error_code) {
+            ikCallbackFnAdapter(robot_state_ptr, jmg, constraint, pose, joints, error_code);
+            };
+
+        // Bijection
+        const std::vector<unsigned int>& bij = jmg->getKinematicsSolverJointBijection();
+
+        std::vector<double> initial_values;
+        robot_state.RobotState::copyJointGroupPositions(jmg, initial_values);
+        std::vector<double> seed(bij.size());
+        for (std::size_t i = 0; i < bij.size(); ++i)
+            seed[i] = initial_values[bij[i]];
+
+        // compute the IK solution
+        std::vector<double> ik_sol;
+        moveit_msgs::MoveItErrorCodes error;
+        
+        if (solver->searchPositionIK(ik_queries, seed, timeout, consistency_limits, ik_sol, ik_callback_fn, error, options,
+                                    &robot_state))
+        {
+            std::vector<double> solution(bij.size());
+            for (std::size_t i = 0; i < bij.size(); ++i)
+            solution[bij[i]] = ik_sol[i];
+            robot_state.RobotState::setJointGroupPositions(jmg, solution);
+            return true;
+        }
+        return false;
+    };
+
     trajectory_msgs::JointTrajectory cartesianPathToJointTrajectory(std::vector<geometry_msgs::Pose>& positions, std::vector<geometry_msgs::Twist>& veolicities, double dt, std::string method="pose")
     {
         moveit_msgs::RobotTrajectory trajectory;
@@ -300,9 +542,11 @@ public:
         bool success;
         int last_valid_ik = 0;
         robot_trajectory::RobotTrajectory rt(start_state.getRobotModel(), "manipulator");
-                
+
+        int last_bound=0;        
         for(std::size_t i = 0; i <= steps; ++i)
         {
+
             if(method=="vel")
             {
                 success = start_state.setFromDiffIK(group, veolicities[i], link->getName(), dt, constraint_fn);
@@ -311,7 +555,23 @@ public:
             {   
                 Eigen::Isometry3d eigen_pose;
                 tf::poseMsgToEigen(positions[i], eigen_pose);
-                success = start_state.setFromIK(group, eigen_pose, link->getName(), consistency_limits, 0.0, constraint_fn, options);
+                success = start_state.setFromIK(group, eigen_pose, link->getName(), consistency_limits, 0.1, constraint_fn, options);
+            }
+            else if(method=="eigen2")
+            {
+                std::vector<std::vector<double>> consistency_limits_vector;
+                consistency_limits_vector.push_back(consistency_limits);
+                double timeout=0.02;
+                std::string tip_link=link->getName();
+                std::vector<std::string> tip_link_vector;
+                tip_link_vector.push_back(tip_link);
+                Eigen::Isometry3d eigen_pose;
+                tf::poseMsgToEigen(positions[i], eigen_pose);
+                EigenSTL::vector_Isometry3d eigen_pose_vector;
+                eigen_pose_vector.push_back(eigen_pose);
+                //success = start_state.RobotState::setFromIK(group, eigen_pose_vector, tip_link_vector, consistency_limits_vector, timeout, constraint_fn, options);
+                success = setFromIK(start_state, group, eigen_pose_vector, tip_link_vector, consistency_limits_vector, timeout, constraint_fn, options);
+                //std::cout<<"Point "<<i<<": "<<success<<std::endl;
             }
             else
             {
@@ -332,17 +592,23 @@ public:
                 rt.addSuffixWayPoint(traj.back(), current_dt);
                 last_valid_ik=i;
             }
-            //std::cout<<i<<"/"<<steps<<" - Traj size: "<<traj.size()<<std::endl;
-        }
-        std::cout<<"IK path size: "<<traj.size()<<std::endl;
 
-        /*
+            if(traj.size()>10){
+            moveit::core::CartesianInterpolator::checkJointSpaceJump(group, traj, jump_threshold);
+            //int current_last_bound = traj.size();
+            start_state = *traj.back();
+            }
+            std::cout<<i<<"/"<<steps<<" - Traj size: "<<traj.size()<<std::endl;
+        }
+        int ik_size = traj.size();
+        std::cout<<"IK path size: "<<ik_size<<std::endl;
+        
         // Jumps check
         std::vector<moveit::core::RobotStatePtr> traj_bounded = traj;
         moveit::core::CartesianInterpolator::checkJointSpaceJump(group, traj_bounded, jump_threshold);
-        std::cout<<"Bounded IK path size: "<<traj_bounded.size()<<std::endl;
-        */
-
+        int ik_jumps_size = traj_bounded.size();
+        std::cout<<"Bounded IK path size: "<<ik_jumps_size<<std::endl;
+        
         /*
         // Add time to trajectory
         trajectory_processing::IterativeParabolicTimeParameterization time_param;
@@ -426,7 +692,7 @@ public:
                 auto stop_start_time = std::chrono::high_resolution_clock::now();
                 robot_exectuion_status.data = 0;
                 robot_execution_status_publisher.publish(robot_exectuion_status);
-                sleep(1);
+                sleep(5);
                 current_point = getCurrentTrajectoryPoint(trajectory_ptr->points);
                 collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name,current_point);            
                 //std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;            
@@ -492,7 +758,7 @@ public:
     };
 
 
-    geometry_msgs::Point calculateCentroid(const std::vector<geometry_msgs::Point>& points) 
+    std::vector<double> calculateCentroid(const std::vector<geometry_msgs::Point>& points) 
     {
         geometry_msgs::Point centroid;
         double numPoints = static_cast<double>(points.size());
@@ -512,7 +778,7 @@ public:
         centroid.y /= numPoints;
         centroid.z /= numPoints;
 
-        return centroid;
+        return std::vector<double> {centroid.x,centroid.y,centroid.z};
     }
 
     void getDmpPlan(trajectory_msgs::JointTrajectory& trajectory, std::vector<double> x_0, 
@@ -537,10 +803,14 @@ public:
         req.tau=tau;
         req.dt=dt;
         req.integrate_iter=integrate_iter;
-
+        req.obstacle=std::vector<double>{};
+        req.gamma=std::vector<double>{};
+        req.beta=std::vector<double>{};
+        req.k=std::vector<double>{};
+        std::cout<<"dmp request"<<std::endl;
 		dmp::GetDMPPlan::Response res; 
         bool plan_received = get_dmp_plan_client.call(req, res);
-
+        std::cout<<"dmp request done: "<<res.plan.points.size()<<std::endl;
         trajectory.joint_names = move_group_ptr->getRobotModel()->getJointModelGroup("manipulator")->getVariableNames();   
 
         trajectory_msgs::JointTrajectoryPoint jtp;
@@ -554,7 +824,7 @@ public:
     };
 
     void getCartesianDmpPlan(trajectory_msgs::JointTrajectory::Ptr& trajectory_ptr, int current_point, std::string collision_object_name,
-                             int n_weights_per_dim = 100, double gamma=1000.0, double beta=4.0/M_PI, double dt=0.008, double K_gain=100.0, 
+                             int n_weights_per_dim = 100, double gamma=1000.0, double beta=4.0/M_PI, double k=1000.0,double dt=0.008, double K_gain=100.0, 
                              double D_gain=2.0 * pow(100,0.5), double tau=5, double t_0 = 0, std::vector<double> initial_velocities = {}, 
                              double seg_length=-1, int integrate_iter=1, std::vector<double> goal_thresh = {})
     {
@@ -565,9 +835,26 @@ public:
         //std::cout<<collision_obj.pose<<std::endl; // 0 for meshes
         shape_msgs::Mesh mesh = collision_obj.meshes[0];
         
-        geometry_msgs::Point obstacle_centroid = calculateCentroid(mesh.vertices);
+        std::vector<double> obstacle;
 
-        std::cout<<"Obstacle: "<<obstacle_centroid.x<<" "<<obstacle_centroid.y<<" "<<obstacle_centroid.z<<std::endl;
+        std::ofstream obstacleOutputFile("obstacle.txt");
+        if (!obstacleOutputFile.is_open()) {
+            std::cerr << "Error opening obstacle file" << std::endl;
+        }
+        for (const auto& point : mesh.vertices) {
+            obstacle.push_back(point.x);
+            obstacle.push_back(point.y);
+            obstacle.push_back(point.z);
+
+            obstacleOutputFile << point.x<<" "<<point.y<<" "<<point.z<<'\n';
+        }
+
+        // Close the file
+        obstacleOutputFile.close();
+
+        //obstacle.push_back(calculateCentroid(mesh.vertices));
+        //std::cout<<"Obstacle: "<<obstacle_centroid[0][0]<<" "<<obstacle_centroid[0][1]<<" "<<obstacle_centroid[0][2]<<std::endl;
+        
         // Convert joint trajectory to Cartesian path
         trajectory_msgs::JointTrajectoryPoint trajectory_point;
 
@@ -584,12 +871,11 @@ public:
         demo_traj.points.push_back(pt);
         */
 
-        std::ofstream outputFile("path.txt");
+        std::ofstream pathOutputFile("path.txt");
 
-        if (!outputFile.is_open()) {
-            std::cerr << "Error opening file" << std::endl;
+        if (!pathOutputFile.is_open()) {
+            std::cerr << "Error opening path file" << std::endl;
         }
-
 
         for (int i=current_point;i<trajectory_ptr->points.size(); i++)
         {
@@ -615,7 +901,7 @@ public:
                 demo_traj.times.push_back(dt*(i-current_point));
             //}
                 // Write each point to the file
-            outputFile << end_effector_position.x()<<" "<<end_effector_position.y()<<" "<<end_effector_position.z()<<" "<<
+            pathOutputFile << end_effector_position.x()<<" "<<end_effector_position.y()<<" "<<end_effector_position.z()<<" "<<
                                       end_effector_orientation.x()<<" "<<end_effector_orientation.y()<<" "<<end_effector_orientation.z()<< '\n';
             
         }
@@ -623,7 +909,7 @@ public:
         //sleep(30);
 
         // Close the file
-        outputFile.close();
+        pathOutputFile.close();
 
         dmp::LearnDMPFromDemo::Request l_req;
         l_req.demo = demo_traj;
@@ -669,10 +955,11 @@ public:
         g_req.tau=tau;
         g_req.dt=dt;
         g_req.integrate_iter=integrate_iter;
-        g_req.beta=beta;
-        g_req.gamma=gamma;
-        g_req.obstacle=std::vector<double>{obstacle_centroid.x,obstacle_centroid.y,obstacle_centroid.z};
-		dmp::GetDMPPlan::Response g_res; 
+        g_req.beta=std::vector<double>{beta,beta,beta};
+        g_req.gamma=std::vector<double>{gamma,gamma,gamma};
+        g_req.k=std::vector<double>{k,k,k};
+        g_req.obstacle=obstacle;
+        dmp::GetDMPPlan::Response g_res; 
         
         bool plan_received = get_cartesian_dmp_plan_client.call(g_req, g_res);
 
@@ -681,6 +968,7 @@ public:
         std::vector<geometry_msgs::Twist> velocities;
         geometry_msgs::PoseStamped stamped_pose;
         geometry_msgs::Twist vel;
+        EigenSTL::vector_Isometry3d eigen_pose_path;
         for(int i=0;i<g_res.plan.points.size();i++)
         {   
             //std::cout<<g_res.plan.times[i]<<std::endl;
@@ -808,7 +1096,7 @@ private:
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "trajectory_validity_service");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     ros::AsyncSpinner spinner(0); // 0 means max number of threads available
     spinner.start();  // start the AsyncSpinner asynchronously (non-blocking)

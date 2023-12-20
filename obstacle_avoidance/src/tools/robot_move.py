@@ -11,10 +11,9 @@ def main():
     robot = RobotCommander()
     group_name = "manipulator"
     move_group = MoveGroupCommander(group_name)
-    planning_scene_interface = PlanningSceneInterface()
 
     # Joint target
-    #target_joint_values=[-2.426,-2.114,-1.289,5.1767,1.9394,-0.899]
+    target_joint_values=[-2.426,-2.114,-1.289,5.1767,1.9394,-0.899]
     target_joint_values=[-0.185,-2.212,-1.236,5.1773,1.1912,1.2707]
   
     move_group.set_joint_value_target(target_joint_values)
@@ -32,8 +31,8 @@ def main():
 
     rospy.loginfo('Moving...')
     # Execute the trajectory
-    move_group.execute(my_plan, wait=True)
-    #move_group.go(wait=True)
+    #move_group.execute(my_plan, wait=True)
+    move_group.go(wait=True)
 
 
 if __name__ == "__main__":

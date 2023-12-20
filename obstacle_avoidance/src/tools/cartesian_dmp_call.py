@@ -70,7 +70,7 @@ class motionGeneration():
             rospy.logerr("Service call fails: %s" %e)
             exit()
             
-    def getPlan(self, initial_pose, goal_pose, seg_length=-1, initial_velocities=[], t_0 = None, tau=5, dt=0.008, integrate_iter=1,goal_thresh=[], obstacle=[], beta=1000.0, gamma=20.0 / math.pi):
+    def getPlan(self, initial_pose, goal_pose, seg_length=-1, initial_velocities=[], t_0 = None, tau=5, dt=0.008, integrate_iter=1,goal_thresh=[], obstacle=[], beta=1000.0, gamma=20.0 / math.pi, k=1000.0):
         """Generate a plan..."""
 
         x_0 = initial_pose
@@ -85,14 +85,17 @@ class motionGeneration():
         else:
             this_goal_thresh = [0.01] * len(initial_pose)
         seg_length = seg_length          #Plan until convergence to goal is -1
+        beta=[beta,beta,beta]
+        gamma=[gamma,gamma,gamma]
+        k=[k,k,k]
 
         rospy.logwarn("tau is: " + str(this_tau))
         plan_resp = self.makePlanRequest(x_0, x_dot_0, t_0, goal, this_goal_thresh,
-                               seg_length, this_tau, this_dt, this_integrate_iter, obstacle, beta, gamma)
+                               seg_length, this_tau, this_dt, this_integrate_iter, obstacle, beta, gamma, k)
         return plan_resp
 
     def makePlanRequest(self, x_0, x_dot_0, t_0, goal, goal_thresh,
-                        seg_length, tau, dt, integrate_iter, obstacle, beta, gamma):
+                        seg_length, tau, dt, integrate_iter, obstacle, beta, gamma,k):
         """Generate a plan from a DMP """
         print("Starting DMP planning...")
         init_time = time.time()
@@ -106,7 +109,7 @@ class motionGeneration():
         try:
             gdp = rospy.ServiceProxy(namespace+'get_dmp_plan', GetDMPPlan)
             resp = gdp(x_0, x_dot_0, t_0, goal, goal_thresh,
-                       seg_length, tau, dt, integrate_iter, obstacle, beta, gamma)
+                       seg_length, tau, dt, integrate_iter, obstacle, beta, gamma,k)
         except rospy.ServiceException as e:
             rospy.logerr("Service call fails: %s"%e)
             exit()
@@ -146,19 +149,30 @@ if __name__ == "__main__":
 
     gamma=1000.0
     beta=18.0 / math.pi
+    k=1000.0
     
     dims = 6
 
     plot_obstacle_as_cube = True
     cube_size = 0.05
 
-    # Path from file
+    # Path & obstacle from file
     real_obstacle_centorid = np.array([-0.15, 0.37, 0.2])
-    obstacle_centroid = np.array([-0.157398, 0.376722, 0.20578])
-    
+
+    obstacle=[]
+    obstacle_file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance.txt')
+    with open(obstacle_file_path, 'r') as inputFile:
+        lines = inputFile.readlines()
+        for line in lines:
+            point = [float(values) for values in line.strip().split()]
+            obstacle.append(point)
+    obstacle=np.array(obstacle)
+
+    obstacle_centroid = np.mean(obstacle, axis=0)
+
     traj=[]
-    file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance.txt')
-    with open(file_path, 'r') as inputFile:
+    path_file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance.txt')
+    with open(path_file_path, 'r') as inputFile:
         lines = inputFile.readlines()
         for line in lines:
             coordinates = [float(coord) for coord in line.strip().split()]
@@ -193,7 +207,7 @@ if __name__ == "__main__":
     final_pose = traj[-1,:].tolist()
 
     pla = DMPTraj()  
-    pla = mg.getPlan(initial_pose,final_pose,-1,[],None,tau=5,dt=0.008, obstacle=obstacle_centroid, beta=beta, gamma=gamma)
+    pla = mg.getPlan(initial_pose,final_pose,-1,[],None,tau=5,dt=0.008, obstacle=obstacle.tolist(), beta=beta, gamma=gamma, k=k)
 
     velocities=[]  
     positions=[]
