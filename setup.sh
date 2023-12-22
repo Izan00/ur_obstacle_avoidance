@@ -11,16 +11,8 @@ sudo apt-get install python3-pcl -y
 sudo apt-get install ros-noetic-moveit -y
 #sudo apt-get install libcgal-dev -y
 sudo apt install xdotool -y
-pip install numpy==1.20.3
-pip install -U scikit-learn
-pip install open3d
-pip install pyvista
-pip install pymeshfix
-pip install pynput
-pip install transformations
+
+pip install -r requirements.txt
 
 rosdep install --from-paths src --ignore-src --rosdistro noetic -y --skip-keys dmp_generate_messages
-
-#roslaunch roy_dmp ur3_gazebo_with_dmp.launch
-#roslaunch realsense2_description view_d435i_model_rviz_gazebo.launch
 

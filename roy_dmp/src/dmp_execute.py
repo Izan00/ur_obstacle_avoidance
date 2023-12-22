@@ -70,7 +70,7 @@ class motionExecution():
         #print('callback:',self.safe_stop)
 
     def execution_status_callback(self, msg):
-        self.execution_status=msg.data
+        self.execution_status=msg.data #0-None 1-stopped 2-running 3-success 4-failed
 
     def robotTrajectoryFromPlan(self, plan, joint_names):
         """Given a dmp plan (GetDMPPlanResponse) create a RobotTrajectory to be able to visualize what it consists and also

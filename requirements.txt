@@ -1,0 +1,8 @@
+numpy==1.20.3
+scikit-learn
+open3d
+pyvista
+pymeshfix
+pynput
+transformations
+screeninfo

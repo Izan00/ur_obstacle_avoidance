@@ -862,7 +862,7 @@ class Ui_MainWindow(object):
 
 "</body></html>"))
         self.RobotIPLabel.setText(_translate("MainWindow", "Robot IP:"))
-        self.IPLineEdit.setPlaceholderText(_translate("MainWindow", "10.10.73.234"))
+        self.IPLineEdit.setPlaceholderText(_translate("MainWindow", "10.10.73.235"))
         self.simulationCheckBox.setText(_translate("MainWindow", "Simulation"))
         self.rvizCheckBox.setText(_translate("MainWindow", "Enable RViz view"))
         self.label.setText(_translate("MainWindow", "Robots:"))

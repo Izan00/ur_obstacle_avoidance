@@ -116,7 +116,7 @@ class motionGeneration():
         return resp
 
 
-def get_cube(o_x, o_y, o_z, L=0.1):   
+def get_cube(o_x, o_y, o_z, W=0.1, D=0.1, H=0.1):
     phi = np.arange(1,10,2)*np.pi/4
     Phi, Theta = np.meshgrid(phi, phi) 
 
@@ -125,9 +125,9 @@ def get_cube(o_x, o_y, o_z, L=0.1):
     z = np.cos(Theta)/np.sqrt(2)
 
     # Change the centroid of the cube from zero to values in data frame
-    x = x*L + o_x
-    y = y*L + o_y
-    z = z*L + o_z
+    x = x*W + o_x
+    y = y*D + o_y
+    z = z*H + o_z
 
     return x,y,z    
     
@@ -149,13 +149,14 @@ if __name__ == "__main__":
     
     dims = 6
 
-    plot_obstacle_as_cube = True
-    cube_size = 0.05
+    plot_obstacle_bbox = True
+    #obstacle_bbox = [0.05,0.05,0.05]  # centroid X,Y,Z and size W,D,H
+    obstacle_bbox = [0.1, 0.15, 0.2]
 
-    # Path from file
-    real_obstacle_centorid = np.array([-0.15, 0.37, 0.2])
-    obstacle_centroid = np.array([-0.157398, 0.376722, 0.20578])
+    #obstacle_centroid = np.array([-0.157398, 0.376722, 0.20578])
+    obstacle_centroid = np.array([-0.2, 0.4, 0.1])
     
+    # Path from file
     traj=[]
     file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance.txt')
     with open(file_path, 'r') as inputFile:
@@ -167,8 +168,6 @@ if __name__ == "__main__":
 
     '''
     # Parametric path
-    obstacle_centroid = np.array([0.0, 0.4, 0.1])
-
     samples = 1000
     traj = np.zeros((samples, 6))
     
@@ -204,23 +203,31 @@ if __name__ == "__main__":
     dP = np.asarray(positions)
     dV = np.asarray(velocities)
 
-    ax = plt.figure().add_subplot(projection='3d')
-    lims=[-0.6,0.6]
+    ax = plt.figure(figsize=(15,12)).add_subplot(projection='3d')
+    linewidth = 2.0
+    radius = 50
+    fontsize = 20
+    labelpad=20
 
-    ax.scatter(obstacle_centroid[0], obstacle_centroid[1],obstacle_centroid[2], s=50, color='tab:orange', label="Obstacle centroid")
-    if plot_obstacle_as_cube:
-        xs,ys,zs = get_cube(real_obstacle_centorid[0],real_obstacle_centorid[1],real_obstacle_centorid[2],cube_size)
-        ax.plot_surface(xs, ys, zs, color='tab:blue',alpha=0.5)
-    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 'tab:red', label="Demo")
-    ax.scatter([[traj[0, 0], traj[-1, 0]]], [[traj[0, 1], traj[-1, 1]]], [[traj[0, 2], traj[-1, 2]]], s=20, color='tab:red')
-    ax.plot(dP[:, 0],dP[:, 1],dP[:, 2], 'tab:green', label="Desired")
-    ax.scatter([[dP[0, 0], dP[-1, 0]]],[[dP[0, 1], dP[-1, 1]]],[[dP[0, 2], dP[-1, 2]]], s=20, color='tab:green')
-    ax.set_xlim(lims)
-    ax.set_ylim(lims)
-    ax.set_zlim(lims)
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-    ax.legend()
+    # Assigm real obtacle to plot
+    ax.scatter(obstacle_centroid[0], obstacle_centroid[1],obstacle_centroid[2], s=radius, color='tab:orange', label="Obstacle centroid")
+    if plot_obstacle_bbox:
+        xs,ys,zs = get_cube(obstacle_centroid[0],obstacle_centroid[1],obstacle_centroid[2],obstacle_bbox[0],obstacle_bbox[1],obstacle_bbox[2])
+        ax.plot_surface(xs, ys, zs, color='tab:blue',alpha=0.3)
+    ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 'tab:red', label="Demo",linewidth=linewidth)
+    ax.scatter([[traj[0, 0], traj[-1, 0]]], [[traj[0, 1], traj[-1, 1]]], [[traj[0, 2], traj[-1, 2]]], s=radius, color='tab:red')
+    ax.plot(dP[:, 0],dP[:, 1],dP[:, 2], 'tab:green', label="Desired", linewidth=linewidth)
+    ax.scatter([[dP[0, 0], dP[-1, 0]]],[[dP[0, 1], dP[-1, 1]]],[[dP[0, 2], dP[-1, 2]]], s=radius, color='tab:green')
+    ax.set_xlim([0.6,-0.6])
+    ax.set_ylim([1.1,-0.3])
+    ax.set_zlim([-0.6,0.6])
+    ax.tick_params(labelsize=fontsize)
+    ax.set_xlabel('x', fontsize=fontsize*1.5, labelpad=labelpad)
+    ax.set_ylabel('y', fontsize=fontsize*1.5, labelpad=labelpad)
+    ax.set_zlabel('z', fontsize=fontsize*1.5, labelpad=labelpad)
+    #ax.invert_yaxis() # Match robot base axis
+    ax.legend(fontsize=fontsize, ncol=3, loc="lower center", bbox_to_anchor=(0.5, -0.05))
+    ax.set_title("DMP with APF", fontsize=fontsize*2, y=1.05)
+    plt.tight_layout()
     plt.show()
     

@@ -36,7 +36,7 @@
     <remap from="~output" to="/camera/depth/color/points_filtered" />
   </node>
 
-  <!-- Run collsion volume reconstruction to add collsion objects in the virtual enviroment model -->
+  <!-- Collsion volume reconstruction (add collsion objects in the virtual workspace model) -->
   <node name="collision_volume_reconstruction_node" pkg="obstacle_avoidance" type="collision_volume_reconstruction" output="screen"> 
     <param name="leaf_size" type="double" value="0.01" />
     <param name="min_cluster_size" type="int" value="1"/>
@@ -52,10 +52,27 @@
     <param name="centroids_marker_pub_topic" type="string" value="/centroids_marker"/>
   </node>
 
-  <!-- Run safety check to reconstruct collision objets in the virtual enviroment model -->
+  <!-- Safety check node (detect movement in workspace and stop robot) -->
   <node name="safety_check_node" pkg="obstacle_avoidance" type="safety_check" output="screen"> 
     <param name="clusters_sub_topic" type="string" value="/clusters"/>
     <param name="safe_stop_pub_topic" type="string" value="/robot_safe_stop"/>
   </node>
+  
+  <!-- Collision avoidance node (detect collsions with object in the workspace an generate a collision avoding trajectory)-->
+  <param name="cartesain_dmp_gamma" type="double" value="1500.0"/>
+  <param name="cartesain_dmp_beta" type="double" value="3.8197"/>
+
+  <node name="collision_check" pkg="obstacle_avoidance" type="collision_check" output="screen"/> 
+   
+  <group ns="cartesian">
+  <node name="dmp_timed_roslaunch" pkg="timed_roslaunch" type="timed_roslaunch.sh" args="2 dmp dmp.launch" output="screen"/>
+  <!--
+  <include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">
+    <arg name="time" value="2" />
+    <arg name="pkg" value="dmp" />
+    <arg name="file" value="dmp.launch" />
+  </include>
+  -->
+  </group>
 
 </launch>

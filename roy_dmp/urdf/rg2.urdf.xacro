@@ -7,7 +7,7 @@
     <!--TODO remove screws from tool collision stl-->
     <!-- rg2 joint -->
     <joint name="rg2_joint" type="fixed">
-      <origin xyz="0.01 0 0" rpy="-${M_PI/2} 0 0" /> 
+      <origin xyz="0.005 0 0" rpy="-${M_PI/2} 0 0" /> 
       <parent link="${prefix}flange"/>
       <child link="${prefix}rg2_body_link"/>
     </joint>

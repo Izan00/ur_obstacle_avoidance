@@ -22,7 +22,8 @@ import numpy as np
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 from std_msgs.msg import Bool
-
+from screeninfo import get_monitors
+    
 def get_joints():
     js = rospy.wait_for_message("joint_states",JointState)
     return js
@@ -35,9 +36,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
 
         super(ApplicationWindow, self).__init__()
-
+	
+        
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        
+        self.screen_height = get_monitors()[0].height
+        self.screen_width = get_monitors()[0].width
+        #gui_height = self.size().height()
+        #gui_width = self.size().width()
+        
+        self.ui.mainwindow.setFixedSize(int(self.screen_width*0.5),int(min(self.screen_height*0.9,self.screen_width*0.5)))
 
         # START WINDOW
         self.ui.simulationCheckBox.stateChanged.connect(self.setSimulation)
@@ -645,35 +654,25 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.dmp_me = motionExecution()
         self.ui.stackedWidget.setCurrentIndex(1)
         if self.rviz:
-            self.ui.mainwindow.setFixedSize(2200,1300)
+            #self.ui.mainwindow.setFixedSize(2200,1300)
+            self.ui.mainwindow.setFixedSize(int(self.screen_width*0.9),int(min(self.screen_height*0.9,self.screen_width*0.5)))
             self.ui.frame_rviz.setVisible(True)
 
     def execute_plan(self):
+        self.ui.execute_plan_pushButton.setEnabled(False)  
+        self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
         print('Executing plan')
         self.ui.avoidanceCheckBox.setEnabled(False)
-        if self.avoidance_enabled:
+        if self.avoidance_enabled :
             self.dmp_me.sendAvoidanceExecution(self.initial_JS,self.goal_JS,self.tau,self.dmp_param_dt)
-            '''
-            init_time_WP = time.time()
-            initial_pose = self.initial_JS
-            final_pose = self.goal_JS
-            print("Start path plan")
-            init_time = time.time()
-            self.path_plan = self.dmp_mg.getPlan(initial_pose,final_pose,-1,[],None,self.tau,self.dmp_param_dt)
-            fin_time = time.time()
-            print ("Computing path done, took: " + str(fin_time - init_time))
-            # print(self.path_plan.plan.points[0].positions)
-            init_time_RT = time.time()
-            robot_traj = self.dmp_me.robotTrajectoryFromPlan(self.path_plan,self.dmp_me.arm)
-            fin_time_RT = time.time()
-            print ("Converting to Robot trajectory done, took: " + str(fin_time_RT - init_time_RT)) 
-            self.dmp_me.sendTrajectory(self.path_plan, self.initial_JS, self.goal_JS)
             '''
             status = self.dmp_me.recieveExecutionStatus() # 0-stopped 1-running 2-success 3-failed
             while status < 2: # While Stopped or Running
                 status = self.dmp_me.recieveExecutionStatus() 
                 time.sleep(1)
             st = True if status == 2 else False # Success or Failed
+            '''
+            st = True
         else:
             st = self.dmp_me.sendTrajectoryAction(self.path_plan,self.initial_JS,self.sim, self.safe_stop_enabled)
             if not st:
@@ -688,42 +687,47 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.avoidanceCheckBox.setEnabled(True)
 
     def collision_check(self):
-        init_time_WP = time.time()
-        initial_pose = self.initial_JS
-        final_pose = self.goal_JS
-        print("Start path plan")
-        init_time = time.time()
-        self.path_plan = self.dmp_mg.getPlan(initial_pose,final_pose,-1,[],None,self.tau,self.dmp_param_dt)
-        fin_time = time.time()
-        print ("Computing path done, took: " + str(fin_time - init_time))
-        # print(self.path_plan.plan.points[0].positions)
-        init_time_RT = time.time()
-        robot_traj = self.dmp_me.robotTrajectoryFromPlan(self.path_plan,self.dmp_me.arm)
-        fin_time_RT = time.time()
-        print ("Converting to Robot trajectory done, took: " + str(fin_time_RT - init_time_RT))
-        print("Checking collisions")
-        init_time_CC = time.time()
-        validity = self.dmp_me.checkTrajectoryValidity(robot_traj, avoidance=self.avoidance_enabled)
-        fin_time_CC = time.time()
-        print ("Collision checks done, took: " + str(fin_time_CC - init_time_CC))
-        init_time_PP = time.time()
-        self.dmp_me.pathPublish(self.path_plan,self.linkName)
-        fin_time_PP = time.time()
-        print("Doing FK and publishing path took, "+ str(fin_time_PP - init_time_PP))
-        print("The whole process took , "+ str(fin_time_PP - init_time_WP))
-        # check_ik = self.dmp_me.get_IK_from_Quart(self.result_FK_goal)
-        # print(check_ik)
-        if validity:
-            print("Trajectory valid")
-            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: green")
-            self.ui.execute_collisionCheck_PB.setText("Generate plan")
-            self.ui.execute_plan_pushButton.setEnabled(True)
+        status = self.dmp_me.recieveExecutionStatus() # 0-None 1-stopped 2-running 3-success 4-failed
+        print(status)
+        if (not self.avoidance_enabled) or (status!=1 and status!=2):
+            init_time_WP = time.time()
+            initial_pose = self.initial_JS
+            final_pose = self.goal_JS
+            print("Start path plan")
+            init_time = time.time()
+            self.path_plan = self.dmp_mg.getPlan(initial_pose,final_pose,-1,[],None,self.tau,self.dmp_param_dt)
+            fin_time = time.time()
+            print ("Computing path done, took: " + str(fin_time - init_time))
+            # print(self.path_plan.plan.points[0].positions)
+            init_time_RT = time.time()
+            robot_traj = self.dmp_me.robotTrajectoryFromPlan(self.path_plan,self.dmp_me.arm)
+            fin_time_RT = time.time()
+            print ("Converting to Robot trajectory done, took: " + str(fin_time_RT - init_time_RT))
+            print("Checking collisions")
+            init_time_CC = time.time()
+            validity = self.dmp_me.checkTrajectoryValidity(robot_traj, avoidance=self.avoidance_enabled)
+            fin_time_CC = time.time()
+            print ("Collision checks done, took: " + str(fin_time_CC - init_time_CC))
+            init_time_PP = time.time()
+            self.dmp_me.pathPublish(self.path_plan,self.linkName)
+            fin_time_PP = time.time()
+            print("Doing FK and publishing path took, "+ str(fin_time_PP - init_time_PP))
+            print("The whole process took , "+ str(fin_time_PP - init_time_WP))
+            # check_ik = self.dmp_me.get_IK_from_Quart(self.result_FK_goal)
+            # print(check_ik)
+            if validity:
+                print("Trajectory valid")
+                self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: green")
+                self.ui.execute_collisionCheck_PB.setText("Generate plan")
+                self.ui.execute_plan_pushButton.setEnabled(True)
+            else:
+                print("Trajectory invalid")
+                self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
+                self.ui.execute_collisionCheck_PB.setText("Invalid plan (Click to regenerate)")
+                self.ui.execute_plan_pushButton.setEnabled(False)
         else:
-            print("Trajectory invalid")
-            self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: red")
-            self.ui.execute_collisionCheck_PB.setText("Invalid plan (Click to regenerate)")
-            self.ui.execute_plan_pushButton.setEnabled(False)
-            
+            print("Previous avoidance execution is still running")
+                
 class RViz(QWidget ):
 
     def __init__(self):
@@ -733,7 +737,7 @@ class RViz(QWidget ):
         self.frame.initialize()
         reader = rviz.YamlConfigReader()
         config = rviz.Config()
-        reader.readFile( config, os.getcwd()+"/src/roy_dmp/resources/dmp_config_old.rviz" )
+        reader.readFile( config, os.getcwd()+"/src/roy_dmp/resources/dmp_config.rviz" )
         self.frame.load( config )
         self.setWindowTitle( config.mapGetChild( "Title" ).getValue() )
         self.frame.setMenuBar( None )
