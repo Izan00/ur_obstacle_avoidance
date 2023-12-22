@@ -85,9 +85,9 @@ class motionGeneration():
         else:
             this_goal_thresh = [0.01] * len(initial_pose)
         seg_length = seg_length          #Plan until convergence to goal is -1
-        beta=[beta,beta,beta]
-        gamma=[gamma,gamma,gamma]
-        k=[k,k,k]
+        beta=[beta,0,0]
+        gamma=[gamma,0,0]
+        k=[k,0,0]
 
         rospy.logwarn("tau is: " + str(this_tau))
         plan_resp = self.makePlanRequest(x_0, x_dot_0, t_0, goal, this_goal_thresh,
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     gamma=1000.0
     beta=18.0 / math.pi
-    k=1000.0
+    k=3.0 / math.pi
     
     dims = 6
 
@@ -160,18 +160,18 @@ if __name__ == "__main__":
     real_obstacle_centorid = np.array([-0.15, 0.37, 0.2])
 
     obstacle=[]
-    obstacle_file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance.txt')
+    obstacle_file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance_obstacle.txt')
     with open(obstacle_file_path, 'r') as inputFile:
         lines = inputFile.readlines()
         for line in lines:
             point = [float(values) for values in line.strip().split()]
             obstacle.append(point)
     obstacle=np.array(obstacle)
-
     obstacle_centroid = np.mean(obstacle, axis=0)
+    obstacle=obstacle.reshape(-1)
 
     traj=[]
-    path_file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance.txt')
+    path_file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance_path.txt')
     with open(path_file_path, 'r') as inputFile:
         lines = inputFile.readlines()
         for line in lines:

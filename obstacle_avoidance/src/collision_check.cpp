@@ -634,6 +634,12 @@ public:
 
         getDmpPlan(trajectory, initial_pose,goal_pose,tau,dt);
         
+        if(trajectory.points.size()==0)
+        {
+            ROS_ERROR("DMP returned empty path");
+            return;
+        }
+
         trajectory_msgs::JointTrajectory::Ptr trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
         
         std::cout<<"Starting plan..."<<std::endl;
@@ -810,7 +816,7 @@ public:
         std::cout<<"dmp request"<<std::endl;
 		dmp::GetDMPPlan::Response res; 
         bool plan_received = get_dmp_plan_client.call(req, res);
-        std::cout<<"dmp request done: "<<res.plan.points.size()<<std::endl;
+        std::cout<<"dmp request done: "<<plan_received<<std::endl;
         trajectory.joint_names = move_group_ptr->getRobotModel()->getJointModelGroup("manipulator")->getVariableNames();   
 
         trajectory_msgs::JointTrajectoryPoint jtp;
@@ -1096,7 +1102,7 @@ private:
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "trajectory_validity_service");
-    ros::NodeHandle nh("~");
+    ros::NodeHandle nh;
 
     ros::AsyncSpinner spinner(0); // 0 means max number of threads available
     spinner.start();  // start the AsyncSpinner asynchronously (non-blocking)
