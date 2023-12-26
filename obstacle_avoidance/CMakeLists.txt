@@ -17,13 +17,12 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_ros_planning_interface
   moveit_ros_planning
   visualization_msgs
-
+  dmp
   message_generation
 )
 
 add_message_files(
   FILES
-  AvoidanceExecute.msg
 )
 
 generate_messages(
@@ -42,7 +41,7 @@ find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
 
 catkin_package(
-  CATKIN_DEPENDS roscpp sensor_msgs tf2_ros std_msgs sensor_msgs moveit_core
+  CATKIN_DEPENDS roscpp dmp sensor_msgs tf2_ros std_msgs sensor_msgs moveit_core
 )
 
 include_directories(

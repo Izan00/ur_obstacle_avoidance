@@ -115,12 +115,12 @@ class motionExecution():
         return True
 
    
-    def sendTrajectory(self,robot_trajectory,initial_pose,target_pose):
+    def sendTrajectoryToAvoidance(self,robot_trajectory,initial_pose):
         trajectory_msg = JointTrajectory()
-        satart_point = JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.0))
-        target_point = JointTrajectoryPoint(positions=target_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(robot_trajectory.plan.times[-1]))
+        start_point = JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.001))
+        #target_point = JointTrajectoryPoint(positions=target_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(robot_trajectory.plan.times[-1]))
         trajectory = [JointTrajectoryPoint(positions=point.positions, velocities=point.velocities, time_from_start=rospy.Duration(time)) for point,time in zip(robot_trajectory.plan.points,robot_trajectory.plan.times)]
-        trajectory = [satart_point] + trajectory + [target_point]
+        trajectory = [start_point] + trajectory #+ [target_point]
         trajectory_msg.header.stamp = rospy.Time.now()
         rospy.loginfo('Sending trajectory...')
         trajectory_msg.joint_names = self.arm
@@ -128,18 +128,15 @@ class motionExecution():
         self.robot_trajectory_pub.publish(trajectory_msg)
         rospy.loginfo('Trajectory sent')
 
-    def sendAvoidanceExecution(self, initial_pose, target_pose, tau, dt):
-
+    def sendDmpToAvoidance(self, initial_pose, target_pose, tau, dt):
         start_point = JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.0))
         goal_point = JointTrajectoryPoint(positions=target_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.0))
-        
         execute_msg = AvoidanceExecute()
         execute_msg.header.stamp = rospy.Time.now()
         execute_msg.start_point = start_point
         execute_msg.target_point = goal_point
         execute_msg.tau=tau
         execute_msg.dt=dt
-
         self.execute_avoidance_pub.publish(execute_msg)
 
     def recieveExecutionStatus(self):

@@ -1,3 +1,13 @@
+#include <vector>
+#include<cmath>
+#include<chrono>
+#include<thread>
+#include <algorithm>
+
+#include <eigen_conversions/eigen_msg.h>
+
+#include <nav_msgs/Path.h>
+
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Quaternion.h>
@@ -7,19 +17,27 @@
 
 #include <std_msgs/Bool.h>
 #include <std_msgs/ColorRGBA.h>
+#include <std_msgs/Int32.h>
+
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <tf2_ros/transform_listener.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include <vector>
-
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <trajectory_msgs/JointTrajectory.h>
 
 #include <moveit_msgs/CollisionObject.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/planning_scene/planning_scene.h>
+#include <moveit_msgs/GetPlanningScene.h>
+#include <moveit/robot_state/conversions.h>
+#include <moveit_msgs/RobotState.h>
+#include <moveit/robot_state/cartesian_interpolator.h>
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 #include <shape_msgs/SolidPrimitive.h>
 #include <shape_msgs/Mesh.h>

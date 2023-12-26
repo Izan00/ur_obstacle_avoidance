@@ -1,18 +1,5 @@
 #include <ros/ros.h>
 #include "obstacle_avoidance.h"
-#include "obstacle_avoidance/AvoidanceExecute.h"
-
-#include <std_msgs/Int32.h>
-#include <trajectory_msgs/JointTrajectory.h>
-#include <moveit/move_group_interface/move_group_interface.h>
-#include <moveit/planning_scene/planning_scene.h>
-#include <moveit_msgs/GetPlanningScene.h>
-#include <moveit/robot_state/conversions.h>
-#include <moveit_msgs/RobotState.h>
-#include <nav_msgs/Path.h>
-#include <moveit/robot_state/cartesian_interpolator.h>
-#include <moveit/trajectory_processing/iterative_time_parameterization.h>
-#include <eigen_conversions/eigen_msg.h>
 
 #include<dmp/GetDMPPlan.h> 
 #include<dmp/LearnDMPFromDemo.h> 
@@ -20,11 +7,6 @@
 #include<dmp/DMPTraj.h>
 #include<dmp/DMPData.h>
 #include<dmp/DMPPoint.h>
-
-#include<cmath>
-#include<chrono>
-#include<thread>
-#include <algorithm>
 
 class CollsionCheck
 {
@@ -36,6 +18,8 @@ public:
         std::string trajectory_sub_topic;
         std::string avoidance_execute_sub_topic;
         std::string robot_execution_status_topic;
+
+        std::string cartesian_dmp_service_namespace;
 
         // Parameters update
         nh.param<std::string>("trajectory_sub_topic", trajectory_sub_topic, "/robot_global_trajectory");
@@ -50,13 +34,14 @@ public:
         nh.param<double>("cartesian_dmp_speed_scale", cartesian_dmp_speed_scale, 1.0); 
         nh.param<double>("cartesian_dmp_dt", cartesian_dmp_dt, 0.01); 
         nh.param<double>("cartesain_dmp_gamma", cartesain_dmp_gamma, 1500.0); 
-        std::cout<<"Gamma: "<<cartesain_dmp_gamma<<std::endl;
         nh.param<double>("cartesain_dmp_beta", cartesain_dmp_beta, 12.0/M_PI); 
         nh.param<double>("cartesain_dmp_k", cartesain_dmp_k, 100); 
         nh.param<double>("cartesain_dmp_d", cartesain_dmp_d, 2.0*pow(cartesain_dmp_k,0.5)); 
         nh.param<int>("cartesian_dmp_n_weights_per_dim", cartesian_dmp_n_weights_per_dim, 100);
         nh.param<int>("cartesian_dmp_n_bases", cartesian_dmp_n_bases, 100);  
         nh.param<double>("ik_jump_threshold_factor", ik_jump_threshold_factor, 0.01);
+
+        nh.param<std::string>("cartesian_dmp_service_namespace", cartesian_dmp_service_namespace, "cartesian"); 
         
         nh.param<std::string>("end_effector_link", end_effector_link, "rg2_eef_link");
         nh.param<std::string>("end_effector_collision_link", end_effector_collision_link, "rg2_body_link");
@@ -68,19 +53,19 @@ public:
         move_group_ptr->setEndEffectorLink(end_effector_link);
 
         // Ros publishers/subscribers
-        trajectory_subscriber = nh.subscribe(trajectory_sub_topic, 10, &CollsionCheck::trajectoryCallback, this);
-        execute_subscriber = nh.subscribe(avoidance_execute_sub_topic, 10, &CollsionCheck::executeCallback, this);
+        dmp_trajectory_subscriber = nh.subscribe(trajectory_sub_topic, 10, &CollsionCheck::trajectoryCallback, this);
         
         robot_execution_status_publisher = nh.advertise<std_msgs::Int32>(robot_execution_status_topic, 10);
         cartesian_dmp_path_publisher = nh.advertise<nav_msgs::Path>("/imitated_path_avoidance",10);
         cartesian_ik_path_publisher = nh.advertise<nav_msgs::Path>("/true_imitated_path_avoidance",10);
 
-
         // Create action clients for DMP
-        get_dmp_plan_client = nh.serviceClient<dmp::GetDMPPlan>("get_dmp_plan");
-        get_cartesian_dmp_plan_client = nh.serviceClient<dmp::GetDMPPlan>("cartesian/get_dmp_plan");
-        learn_dmp_from_demo_client = nh.serviceClient<dmp::LearnDMPFromDemo>("cartesian/learn_dmp_from_demo");
-        set_active_dmp_client = nh.serviceClient<dmp::SetActiveDMP>("cartesian/set_active_dmp");
+        if(cartesian_dmp_service_namespace.size()>0)
+            cartesian_dmp_service_namespace = cartesian_dmp_service_namespace+"/";
+
+        get_dmp_plan_client = nh.serviceClient<dmp::GetDMPPlan>(cartesian_dmp_service_namespace+"get_dmp_plan");
+        learn_dmp_from_demo_client = nh.serviceClient<dmp::LearnDMPFromDemo>(cartesian_dmp_service_namespace+"learn_dmp_from_demo");
+        set_active_dmp_client = nh.serviceClient<dmp::SetActiveDMP>(cartesian_dmp_service_namespace+"set_active_dmp");
 
         // Create an action client for planning scene
         scene_client = nh.serviceClient<moveit_msgs::GetPlanningScene>("get_planning_scene");
@@ -89,7 +74,7 @@ public:
 
     };
 
-    double getCollisionDistance(const std::vector<trajectory_msgs::JointTrajectoryPoint>& trajectory_points, std::string& collision_object, std::vector<double>& collision_point, int path_start=0)
+    double getCollisionDistance(const std::vector<trajectory_msgs::JointTrajectoryPoint>& trajectory_points, std::string& collision_object, std::string& collision_link, std::vector<double>& collision_point, int path_start=0)
     {   
         moveit_msgs::GetPlanningScene::Request req;
         moveit_msgs::GetPlanningScene::Response res;
@@ -132,7 +117,8 @@ public:
                     const std::string& object1 = contact.first.first;
                     const std::string& object2 = contact.first.second;
                     //std::cout<<"Collision between: " << object1 << " and " << object2<<std::endl;
-                    if(object1==end_effector_collision_link || object2==end_effector_collision_link)
+                    if(object1.find("collision_cluster_") != std::string::npos || object1.find("collision_cluster_") != std::string::npos)
+                    //if(object1==end_effector_collision_link || object2==end_effector_collision_link)
                     {
                         // Print collision points
                         for (const auto& contact_point : contact.second) {
@@ -168,11 +154,16 @@ public:
                         // Print the duration
                         //std::cout <<"Execution time: "<<duration << std::endl;
                         
-                        if(object1==end_effector_collision_link)
-                            collision_object=object2;
+                        if(object1.find("collision_cluster_") != std::string::npos)
+                        {
+                            collision_object = object1;
+                            collision_link = object2;
+                        }
                         else
-                            collision_object=object1;
-
+                        {
+                            collision_object = object2;
+                            collision_link = object1;
+                        }
                         collision_point = std::vector<double>{e_collision_point.x(),e_collision_point.y(),e_collision_point.z()};
                         return collision_distance;
                         //return false;
@@ -193,13 +184,23 @@ public:
         //return true;
     };
 
-    moveit::planning_interface::MoveGroupInterface::Plan getPlanFromJointTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr trajectory)
+    moveit::planning_interface::MoveGroupInterface::Plan getPlanFromJointTrajectory(const trajectory_msgs::JointTrajectory::ConstPtr trajectory, int initial_point=0)
     {
         moveit_msgs::RobotState robot_state_msg;
         moveit::core::robotStateToRobotStateMsg(*move_group_ptr->getCurrentState(), robot_state_msg);
         moveit::planning_interface::MoveGroupInterface::Plan plan;
-        plan.trajectory_.joint_trajectory = *trajectory;
-        plan.start_state_  = robot_state_msg;
+
+        if (initial_point>0)
+        {
+            std::vector<trajectory_msgs::JointTrajectoryPoint>  points = trajectory->points;
+            std::vector<trajectory_msgs::JointTrajectoryPoint> trimed_points(points.begin() + initial_point, points.end());
+            plan.trajectory_.joint_trajectory.points = trimed_points;
+            plan.trajectory_.joint_trajectory.header = trajectory->header;
+            plan.trajectory_.joint_trajectory.joint_names = trajectory->joint_names;
+            plan.start_state_  = robot_state_msg;
+        }
+        else
+            plan.trajectory_.joint_trajectory = *trajectory;
         trajectory_msgs::JointTrajectoryPoint start_point;
         start_point.positions = robot_state_msg.joint_state.position;
         start_point.velocities = std::vector<double>(6,0);
@@ -366,34 +367,24 @@ public:
         return solution.joint_trajectory;
     };
 
-    void executeCallback(const obstacle_avoidance::AvoidanceExecute::ConstPtr& execute_msg){
-        //Generate a plan...            
-        std::vector<double> initial_pose =  execute_msg->start_point.positions;
-        double tau =  execute_msg->tau;
-        double dt =  execute_msg->dt;
-        std::vector<double> goal_pose =  execute_msg->target_point.positions;
-
-        trajectory_msgs::JointTrajectory trajectory;
-
-        getDmpPlan(trajectory, initial_pose,goal_pose,tau,dt);
-        
-        trajectory_msgs::JointTrajectory::Ptr trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
-        
+    void executePlanWithAvoidance(trajectory_msgs::JointTrajectory::Ptr trajectory_ptr)
+    {
         std::cout<<"Starting plan..."<<std::endl;
   
         std_msgs::Int32 robot_exectuion_status; //0-None 1-stopped 2-running 3-success 4-failed
         robot_exectuion_status.data = 2;
         robot_execution_status_publisher.publish(robot_exectuion_status);
 
-        double execution_time = trajectory.points.back().time_from_start.toSec() -  trajectory.points.front().time_from_start.toSec();
+        double execution_time = trajectory_ptr->points.back().time_from_start.toSec() - trajectory_ptr->points.front().time_from_start.toSec();
         std::cout<<"Execution time: "<<execution_time<<std::endl;
         double collision_distance = -1;
         std::string collision_object_name = "";
+        std::string collision_link_name = "";
         
         // Get goal state
         robot_state::RobotState goal_robot_state = *move_group_ptr->getCurrentState();
         goal_robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
-                                            trajectory.points.back().positions);
+                                            trajectory_ptr->points.back().positions);
 		const Eigen::Isometry3d& goal_effector_pose = goal_robot_state.getGlobalLinkTransform(end_effector_link);
         Eigen::Vector3d goal_effector_position = goal_effector_pose.translation();
         robot_state::RobotState current_state = *move_group_ptr->getCurrentState();
@@ -429,7 +420,7 @@ public:
                 return;
             }
             current_point = getCurrentTrajectoryPoint(trajectory_ptr, current_point);
-            collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_point, current_point);        
+            collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_link_name, collision_point, current_point);        
             //std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;
             if(debug)
                 std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<" - Duration: "<<execution_duration<<" -  Goal dist: "<<goal_dist<<std::endl;
@@ -446,38 +437,47 @@ public:
 					robot_execution_status_publisher.publish(robot_exectuion_status);
 					sleep(5);
 					current_point = getCurrentTrajectoryPoint(trajectory_ptr,current_point);
-					collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name,collision_point,current_point);            
-					//std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;            
-					/*
-					//Wait for object to clear path
-					while(collision_distance>0 && collision_distance<collision_threshold)
-					{
-						current_point = getCurrentTrajectoryPoint(trajectory_ptr,current_point);
-						collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_point, current_point);
-						std::cout<<"Current point: "<<current_point<<" - Collision dist: "<<collision_distance<<std::endl;
-					}
-					*/
-					std::cout<<"Getting cartesian DMP..."<<std::endl;
-					std::vector<geometry_msgs::Pose> path;
-					getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, collision_point, cartesian_dmp_n_weights_per_dim, cartesain_dmp_gamma, cartesain_dmp_beta, cartesian_dmp_dt, cartesain_dmp_k, cartesain_dmp_d);
-					//trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
-					std::cout<<"Start time"<<trajectory_ptr->points[0].time_from_start<<std::endl;
-
-					// TODO add custom validity check
-					sleep(5);
-					current_point = 0;
-					execution_time = trajectory_ptr->points.back().time_from_start.toSec() -  trajectory_ptr->points.front().time_from_start.toSec();
-					goal_robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
-												trajectory_ptr->points.back().positions);
-					std::cout<<"New execution time: "<<execution_time<<std::endl;
-					robot_exectuion_status.data = 2;
-					robot_execution_status_publisher.publish(robot_exectuion_status);
-					std::cout<<"Moving..."<<std::endl;
-					// move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr));
-					moveit_msgs::MoveItErrorCodes error = move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr));
-					std::cout<<"Error: "<<error.val<<std::endl;
-					//auto stop_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - stop_start_time);
-					execution_start_time = std::chrono::high_resolution_clock::now();
+					collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_link_name,collision_point,current_point);            
+                    //std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;                
+                    
+                    // Check if the collision is avoidable
+                    if(collision_link_name!=end_effector_collision_link){
+                        //Wait for object to clear path
+                        std::cout<<"Unable to avoid cosllison with "<<collision_object_name<<", waiting until removed from currect position..."<<std::endl;
+                        while(collision_distance>0 && collision_distance<collision_threshold)
+                        {
+                            //current_point = getCurrentTrajectoryPoint(trajectory_ptr,current_point);
+                            collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_link_name, collision_point, current_point);
+                            //std::cout<<"Current point: "<<current_point<<" - Collision dist: "<<collision_distance<<std::endl;
+                        }
+                        std::cout<<"Collision clreared"<<std::endl;
+                        auto stop_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - stop_start_time);
+                        execution_start_time = execution_start_time-stop_duration;
+                    }
+                    else
+                    {
+                        std::cout<<"Getting cartesian DMP..."<<std::endl;
+                        std::vector<geometry_msgs::Pose> path;
+                        getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, collision_point, cartesian_dmp_n_weights_per_dim, cartesain_dmp_gamma, cartesain_dmp_beta, cartesian_dmp_dt, cartesain_dmp_k, cartesain_dmp_d);
+                        //trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
+                        std::cout<<"Start time"<<trajectory_ptr->points[0].time_from_start<<std::endl;
+                        // TODO add custom validity check
+					    //sleep(5);
+                        current_point = 0;
+                        execution_time = trajectory_ptr->points.back().time_from_start.toSec() -  trajectory_ptr->points.front().time_from_start.toSec();
+                        goal_robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
+                                                    trajectory_ptr->points.back().positions);
+                        std::cout<<"New execution time: "<<execution_time<<std::endl;
+                        
+                        execution_start_time = std::chrono::high_resolution_clock::now();  
+                    }
+                    robot_exectuion_status.data = 2;
+                    robot_execution_status_publisher.publish(robot_exectuion_status);
+                    std::cout<<"Moving..."<<std::endl;
+                    // move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr, current_point));
+                    moveit_msgs::MoveItErrorCodes error = move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr, current_point));
+                    std::cout<<"Error: "<<error.val<<std::endl;
+                       
 				}
             }
             else
@@ -489,7 +489,6 @@ public:
         robot_exectuion_status.data = 3;
         robot_execution_status_publisher.publish(robot_exectuion_status);
     };
-
 
     int getCurrentTrajectoryPoint(const trajectory_msgs::JointTrajectory::Ptr trajectory, int prev_point=0) 
     {
@@ -526,7 +525,6 @@ public:
         return closest_point;
     };
 
-
     geometry_msgs::Point calculateCentroid(const std::vector<geometry_msgs::Point>& points) 
     {
         geometry_msgs::Point centroid;
@@ -549,44 +547,6 @@ public:
 
         return centroid;
     }
-
-    void getDmpPlan(trajectory_msgs::JointTrajectory& trajectory, std::vector<double> x_0, 
-                      std::vector<double> goal, double tau=5, double dt=0.008, double t_0 = 0,  
-                      std::vector<double> initial_velocities = {}, double seg_length=-1, 
-                      int integrate_iter=1, std::vector<double> goal_thresh = {})
-    {
-    
-        std::vector<double> x_dot_0(x_0.size(), 0.0);
-        tau = tau*2;
-        
-        if(goal_thresh.size()==0)
-            goal_thresh.resize(x_0.size(), 0.01);
-    
-        dmp::GetDMPPlan::Request req;
-        req.x_0=x_0; 
-        req.x_dot_0=x_dot_0;
-        req.t_0=t_0;
-        req.goal=goal;
-        req.goal_thresh=goal_thresh;
-		req.seg_length=seg_length;
-        req.tau=tau;
-        req.dt=dt;
-        req.integrate_iter=integrate_iter;
-
-		dmp::GetDMPPlan::Response res; 
-        bool plan_received = get_dmp_plan_client.call(req, res);
-
-        trajectory.joint_names = move_group_ptr->getRobotModel()->getJointModelGroup("manipulator")->getVariableNames();   
-
-        trajectory_msgs::JointTrajectoryPoint jtp;
-        for(int i=0; i<res.plan.points.size();i++)
-        {
-            jtp.positions = res.plan.points[i].positions;
-            jtp.velocities = res.plan.points[i].velocities;
-            jtp.time_from_start = ros::Duration(res.plan.times[i]);
-            trajectory.points.push_back(jtp);
-        }
-    };
 
     void getCartesianDmpPlan(trajectory_msgs::JointTrajectory::Ptr& trajectory_ptr, int current_point, std::string collision_object_name, std::vector<double> collision_point,
                              int n_weights_per_dim = 100, double gamma=1000.0, double beta=4.0/M_PI, double dt=0.008, double K_gain=100.0, 
@@ -718,7 +678,7 @@ public:
 		//g_req.obstacle=collision_point;
 		dmp::GetDMPPlan::Response g_res; 
         
-        bool plan_received = get_cartesian_dmp_plan_client.call(g_req, g_res);
+        bool plan_received = get_dmp_plan_client.call(g_req, g_res);
 
         std::vector<geometry_msgs::Pose> positions;
         std::vector<geometry_msgs::PoseStamped> stamped_positions;
@@ -807,15 +767,17 @@ public:
     
     void trajectoryCallback(const trajectory_msgs::JointTrajectory::ConstPtr& trajectory_msg)
     {
-        ROS_INFO("Trajectory received");
+        std::cout<<"Trajectory received"<<std::endl;
         trajectory_msgs::JointTrajectoryPoint target_point = trajectory_msg->points.back();
-        //bool results = collision_check(trajectory_msg); //Whole path collsion check
+
+        trajectory_msgs::JointTrajectory::Ptr trajectory_ptr = boost::const_pointer_cast<trajectory_msgs::JointTrajectory>(trajectory_msg);
+
+        executePlanWithAvoidance(trajectory_ptr);
     };
 
 private:
     // Ros publishers/subscribers
-    ros::Subscriber trajectory_subscriber;
-    ros::Subscriber execute_subscriber;
+    ros::Subscriber dmp_trajectory_subscriber;
     ros::Publisher robot_execution_status_publisher;
     ros::Publisher cartesian_dmp_path_publisher;
     ros::Publisher cartesian_ik_path_publisher;
@@ -833,7 +795,6 @@ private:
     std::string end_effector_collision_link;
 
     ros::ServiceClient get_dmp_plan_client;
-    ros::ServiceClient get_cartesian_dmp_plan_client;
     ros::ServiceClient learn_dmp_from_demo_client;
     ros::ServiceClient set_active_dmp_client;
     ros::ServiceClient scene_client;

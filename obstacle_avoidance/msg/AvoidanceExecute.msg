@@ -1,7 +1,0 @@
-Header header
-
-trajectory_msgs/JointTrajectoryPoint start_point
-trajectory_msgs/JointTrajectoryPoint target_point
-
-float64 tau
-float64 dt
