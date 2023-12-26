@@ -99,6 +99,7 @@ class Ui_MainWindow(object):
         self.rvizCheckBox = QtWidgets.QCheckBox(self.splitter_2)
         self.rvizCheckBox.setMaximumSize(QtCore.QSize(16777215, 25))
         self.rvizCheckBox.setObjectName("rvizCheckBox")
+        self.rvizCheckBox.setChecked(True)
         self.gridLayout_4.addWidget(self.splitter_rviz, 1, 1, 1, 1)
 
         
