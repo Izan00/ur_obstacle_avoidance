@@ -117,10 +117,10 @@ class motionExecution():
    
     def sendTrajectoryToAvoidance(self,robot_trajectory,initial_pose):
         trajectory_msg = JointTrajectory()
-        start_point = JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.001))
+        #start_point = JointTrajectoryPoint(positions=initial_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(0.001))
         #target_point = JointTrajectoryPoint(positions=target_pose, velocities=[0]*len(self.arm), time_from_start=rospy.Duration(robot_trajectory.plan.times[-1]))
         trajectory = [JointTrajectoryPoint(positions=point.positions, velocities=point.velocities, time_from_start=rospy.Duration(time)) for point,time in zip(robot_trajectory.plan.points,robot_trajectory.plan.times)]
-        trajectory = [start_point] + trajectory #+ [target_point]
+        #trajectory = [start_point] + trajectory #+ [target_point]
         trajectory_msg.header.stamp = rospy.Time.now()
         rospy.loginfo('Sending trajectory...')
         trajectory_msg.joint_names = self.arm

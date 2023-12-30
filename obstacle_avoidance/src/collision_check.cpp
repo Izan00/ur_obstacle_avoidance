@@ -26,7 +26,7 @@ public:
         nh.param<std::string>("avoidance_execute_sub_topic", avoidance_execute_sub_topic, "/avoidance_execute");
         nh.param<std::string>("robot_execution_status_topic", robot_execution_status_topic, "/robot_execution_status");
         
-        nh.param<bool>("debug", debug, true);
+        nh.param<bool>("debug", debug, false);
 
         nh.param<double>("collision_threshold", collision_threshold, 0.25); //Set the collisin check horizont distance in m
         nh.param<double>("goal_threshold", goal_threshold, 0.03); // Joints L2 norm in m
@@ -39,7 +39,7 @@ public:
         nh.param<double>("cartesain_dmp_d", cartesain_dmp_d, 2.0*pow(cartesain_dmp_k,0.5)); 
         nh.param<int>("cartesian_dmp_n_weights_per_dim", cartesian_dmp_n_weights_per_dim, 100);
         nh.param<int>("cartesian_dmp_n_bases", cartesian_dmp_n_bases, 100);  
-        nh.param<double>("ik_jump_threshold_factor", ik_jump_threshold_factor, 0.01);
+        nh.param<double>("ik_jump_threshold_factor", ik_jump_threshold_factor, 0.05);
 
         nh.param<std::string>("cartesian_dmp_service_namespace", cartesian_dmp_service_namespace, "cartesian"); 
         
@@ -189,7 +189,6 @@ public:
         moveit_msgs::RobotState robot_state_msg;
         moveit::core::robotStateToRobotStateMsg(*move_group_ptr->getCurrentState(), robot_state_msg);
         moveit::planning_interface::MoveGroupInterface::Plan plan;
-
         if (initial_point>0)
         {
             std::vector<trajectory_msgs::JointTrajectoryPoint>  points = trajectory->points;
@@ -197,10 +196,10 @@ public:
             plan.trajectory_.joint_trajectory.points = trimed_points;
             plan.trajectory_.joint_trajectory.header = trajectory->header;
             plan.trajectory_.joint_trajectory.joint_names = trajectory->joint_names;
-            plan.start_state_  = robot_state_msg;
         }
         else
             plan.trajectory_.joint_trajectory = *trajectory;
+        plan.start_state_  = robot_state_msg;
         trajectory_msgs::JointTrajectoryPoint start_point;
         start_point.positions = robot_state_msg.joint_state.position;
         start_point.velocities = std::vector<double>(6,0);
@@ -233,13 +232,13 @@ public:
         return distance;
     };
 
-    trajectory_msgs::JointTrajectory cartesianPathToJointTrajectory(std::vector<geometry_msgs::Pose>& positions, std::vector<geometry_msgs::Twist>& veolicities, double dt, std::string method="pose")
+    trajectory_msgs::JointTrajectory cartesianPathToJointTrajectory(std::vector<geometry_msgs::Pose>& positions, double dt, double start_dist_th=0, double speed_scaling=1.0)
     {
-        moveit_msgs::RobotTrajectory trajectory;
-        moveit_msgs::MoveItErrorCodes *error;
         std::cout<<"Positions size: "<<positions.size()<<std::endl;
-
-        /*
+        
+        /* Interface converter (not working)
+        moveit_msgs::RobotTrajectory robot_trajectory;
+        moveit_msgs::MoveItErrorCodes *error;
         std::vector<geometry_msgs::Pose> spaced_pose;
         spaced_pose.push_back(positions[0]);
         for(std::size_t i = 1; i <= positions.size(); ++i)
@@ -251,7 +250,7 @@ public:
         std::cout<<"Spaced size: "<<spaced_pose.size()<<std::endl;
         */
 
-        //double fraction = move_group_ptr->computeCartesianPath(positions, 0.01, 0.0, trajectory, true, error);
+        //double fraction = move_group_ptr->computeCartesianPath(positions, 0.01, 0.0, robot_trajectory, true, error);
         //std::cout<<"Plan fraction: "<<fraction<<std::endl;
 
         robot_state::RobotState start_state = *move_group_ptr->getCurrentState();
@@ -303,27 +302,19 @@ public:
         int steps = positions.size();
         std::cout<<"Computing path IK..."<<std::endl;
         double dist_prev_point=0;
-        bool success;
+        bool success=false;
         int last_valid_ik = 0;
         robot_trajectory::RobotTrajectory rt(start_state.getRobotModel(), "manipulator");
-                
+
         for(std::size_t i = 0; i <= steps; ++i)
         {
-            if(method=="vel")
-            {
-                success = start_state.setFromDiffIK(group, veolicities[i], link->getName(), dt, constraint_fn);
-            }
-            else if(method=="eigen")
-            {   
-                Eigen::Isometry3d eigen_pose;
-                tf::poseMsgToEigen(positions[i], eigen_pose);
+            Eigen::Isometry3d eigen_pose;
+            tf::poseMsgToEigen(positions[i], eigen_pose);
+            double distance = (eigen_pose.translation() - start_pose.translation()).norm();
+            //std::cout<<i<<"/"<<steps<<" - Dist: "<<distance<<std::endl;
+            if(distance>start_dist_th)
                 success = start_state.setFromIK(group, eigen_pose, link->getName(), consistency_limits, 0.0, constraint_fn, options);
-            }
-            else
-            {
-                //geometry_msgs::Pose pose =  positions[i];
-                success = start_state.setFromIK(group, positions[i], link->getName(), 0.0, constraint_fn, options);
-            }
+            
             if(success)
             {
                 if(traj.size()>0)
@@ -331,30 +322,28 @@ public:
                 //if(dist_prev_point<0.02)
                 traj.push_back(std::make_shared<moveit::core::RobotState>(start_state));
                 //std::cout<<"Dist: "<<dist_prev_point<<std::endl;
-                //rt.addSuffixWayPoint(traj.back(), 0.0); // Need time to be set below
                 double current_dt = (i-last_valid_ik)*dt;
-                if(current_dt==0)
-                    current_dt=dt*5;
-				if(i<10)
-					current_dt=current_dt*5;
-                rt.addSuffixWayPoint(traj.back(), current_dt*3);
+                // Avoid abrupt accelerations at start
+                if(current_dt==0) // If the first point is taken, it will be scaled 3 time
+                    current_dt=dt/speed_scaling;
+				if(distance<start_dist_th*3) // During a distance of 3 times the start distance threshold, it will be scaled 2 times 
+					current_dt=current_dt/speed_scaling;
+                // Add time to trajectory (custom)
+                rt.addSuffixWayPoint(traj.back(), current_dt/speed_scaling);
                 last_valid_ik=i;
             }
             //std::cout<<i<<"/"<<steps<<" - Traj size: "<<traj.size()<<std::endl;
         }
-        traj.pop_back(); // TODO filter end outliers
-        traj.pop_back();
         std::cout<<"IK path size: "<<traj.size()<<std::endl;
 		
-        /*
-        // Jumps check
+        
+        // Jumps check (not working)
         std::vector<moveit::core::RobotStatePtr> traj_bounded = traj;
         moveit::core::CartesianInterpolator::checkJointSpaceJump(group, traj_bounded, jump_threshold);
-        std::cout<<"Bounded IK path size: "<<traj_bounded.size()<<std::endl;
-        */
-
+        std::cout<<"Bounded IK path size (not used): "<<traj_bounded.size()<<std::endl;
+        
         /*
-        // Add time to trajectory
+        // Add time to trajectory (auto)
         trajectory_processing::IterativeParabolicTimeParameterization time_param;
         if(method=="pose" || method=="eigen")
             time_param.computeTimeStamps(rt, cartesian_dmp_speed_scale,cartesian_dmp_speed_scale); // scale speed for sim
@@ -363,8 +352,54 @@ public:
         // Extract trajectrory
         moveit_msgs::RobotTrajectory solution;
         rt.getRobotTrajectoryMsg(solution);
+        trajectory_msgs::JointTrajectory trajectory = solution.joint_trajectory;
+
+        // Check trajectory IK conversion
+        robot_state::RobotState robot_state = *move_group_ptr->getCurrentState();
+        trajectory_msgs::JointTrajectoryPoint trajectory_point;
+        std::vector<geometry_msgs::PoseStamped> stamped_positions;
+        geometry_msgs::PoseStamped stamped_pose;
+        Eigen::Vector3d prev_end_effector_pose;
+        double distance = 0;
+        double speed = 0;
+        for (int i=0;i<trajectory.points.size(); i++)
+        {
+            trajectory_point = trajectory.points[i];
+            // Set robot state based on joint values
+            robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
+                                            trajectory_point.positions);
+            // Get end effector pose
+            const Eigen::Isometry3d& end_effector_pose = robot_state.getGlobalLinkTransform(end_effector_link);
+            Eigen::Vector3d end_effector_position = end_effector_pose.translation();
+            Eigen::Quaterniond end_effector_orientation(end_effector_pose.rotation());
+            geometry_msgs::Pose pose;
+            pose.position.x=end_effector_position.x();
+            pose.position.y=end_effector_position.y();
+            pose.position.z=end_effector_position.z();
+            stamped_pose.pose=pose; // Ignore eef orientation to avoid path visualization error in Rviz
+
+            if(i>0)
+            {
+                distance = (end_effector_pose.translation() - prev_end_effector_pose).norm();
+                speed = distance/(trajectory.points[i].time_from_start.toNSec()-trajectory.points[i-1].time_from_start.toNSec())*1e9;
+                if(debug)
+                    std::cout<<"Point "<<i<<" distance: "<<distance<<" speed: "<<speed<<std::endl;
+            }
+            if(speed>0.1)
+                trajectory.points.erase (trajectory.points.begin() + i);
+            else
+            {
+                stamped_positions.push_back(stamped_pose);
+                prev_end_effector_pose = end_effector_pose.translation();
+            }
+
+        }
+        nav_msgs::Path imitated_path;
+        imitated_path.header.frame_id = "base_link";
+        imitated_path.poses = stamped_positions;
+        cartesian_ik_path_publisher.publish(imitated_path);
         
-        return solution.joint_trajectory;
+        return trajectory;
     };
 
     void executePlanWithAvoidance(trajectory_msgs::JointTrajectory::Ptr trajectory_ptr)
@@ -393,9 +428,12 @@ public:
         //double goal_dist = current_state.distance(goal_robot_state);
             
         // Start movement
-        //move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr));
-        moveit_msgs::MoveItErrorCodes error = move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr));
-        std::cout<<"Error: "<<error.val<<std::endl;
+        //move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr,0));
+        moveit_msgs::MoveItErrorCodes error = move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr,0));
+        //moveit_msgs::MoveItErrorCodes error = move_group_ptr->execute(getPlanFromJointTrajectory(trajectory_ptr,0));
+        
+        if(error.val!=1)
+            std::cout<<"Error: "<<error.val<<std::endl;
         std::cout<<"Moving..."<<std::endl;
         auto execution_start_time = std::chrono::high_resolution_clock::now();
         int current_point = 0;
@@ -476,8 +514,9 @@ public:
                     std::cout<<"Moving..."<<std::endl;
                     // move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr, current_point));
                     moveit_msgs::MoveItErrorCodes error = move_group_ptr->asyncExecute(getPlanFromJointTrajectory(trajectory_ptr, current_point));
-                    std::cout<<"Error: "<<error.val<<std::endl;
-                       
+                    if(error.val!=1) 
+                        std::cout<<"Error: "<<error.val<<std::endl;
+                      
 				}
             }
             else
@@ -720,41 +759,12 @@ public:
 
 
         std::cout<<"Plan from cartesian trajectory..."<<std::endl;
-        trajectory_msgs::JointTrajectory trajectory = cartesianPathToJointTrajectory(positions, velocities, dt, "eigen");
+        double speed_scaling = 1/3.0;
+        double initial_pose_th = 0.02;
+        trajectory_msgs::JointTrajectory trajectory = cartesianPathToJointTrajectory(positions, dt, initial_pose_th, speed_scaling);
         
         trajectory_ptr = boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
         //sleep(60);
-        
-        stamped_positions.clear();
-        Eigen::Vector3d prev_end_effector_pose;
-        for (int i=0;i<trajectory.points.size(); i++)
-        {
-            trajectory_point = trajectory.points[i];
-            // Set robot state based on joint values
-            robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
-                                            trajectory_point.positions);
-            // Get end effector pose
-            const Eigen::Isometry3d& end_effector_pose = robot_state.getGlobalLinkTransform(end_effector_link);
-            Eigen::Vector3d end_effector_position = end_effector_pose.translation();
-            Eigen::Quaterniond end_effector_orientation(end_effector_pose.rotation());
-            geometry_msgs::Pose pose;
-            pose.position.x=end_effector_position.x();
-            pose.position.y=end_effector_position.y();
-            pose.position.z=end_effector_position.z();
-            stamped_pose.pose=pose; // Ignore eef orientation to avoid path visualization error in Rviz
-            stamped_positions.push_back(stamped_pose);
-
-            if(i>0)
-            {
-                double distance = (end_effector_pose.translation() - prev_end_effector_pose).norm();
-                //std::cout<<"Point "<<i<<" distance: "<<distance<<std::endl;
-            }
-            prev_end_effector_pose = end_effector_pose.translation();
-
-        }
-        imitated_path.poses = stamped_positions;
-        cartesian_ik_path_publisher.publish(imitated_path);
-
     };
 
     Eigen::Quaterniond eulerZYXToQauternion(std::vector<double> euler_angles)
