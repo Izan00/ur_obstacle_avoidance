@@ -70,7 +70,7 @@ class motionGeneration():
             rospy.logerr("Service call fails: %s" %e)
             exit()
             
-    def getPlan(self, initial_pose, goal_pose, seg_length=-1, initial_velocities=[], t_0 = None, tau=5, dt=0.008, integrate_iter=1,goal_thresh=[], obstacle=[], beta=1000.0, gamma=20.0 / math.pi):
+    def getPlan(self, initial_pose, goal_pose, seg_length=-1, initial_velocities=[], t_0 = None, tau=5, dt=0.008, integrate_iter=1,goal_thresh=[], obstacle=[], beta=[1000.0,0,0], gamma=[20.0 / math.pi,0,0], k=[3.0 / math.pi,0,0]):
         """Generate a plan..."""
 
         x_0 = initial_pose
@@ -88,11 +88,11 @@ class motionGeneration():
 
         rospy.logwarn("tau is: " + str(this_tau))
         plan_resp = self.makePlanRequest(x_0, x_dot_0, t_0, goal, this_goal_thresh,
-                               seg_length, this_tau, this_dt, this_integrate_iter, obstacle, beta, gamma)
+                               seg_length, this_tau, this_dt, this_integrate_iter, obstacle, beta, gamma, k)
         return plan_resp
 
     def makePlanRequest(self, x_0, x_dot_0, t_0, goal, goal_thresh,
-                        seg_length, tau, dt, integrate_iter, obstacle, beta, gamma):
+                        seg_length, tau, dt, integrate_iter, obstacle, beta, gamma,k):
         """Generate a plan from a DMP """
         print("Starting DMP planning...")
         init_time = time.time()
@@ -106,7 +106,7 @@ class motionGeneration():
         try:
             gdp = rospy.ServiceProxy(namespace+'get_dmp_plan', GetDMPPlan)
             resp = gdp(x_0, x_dot_0, t_0, goal, goal_thresh,
-                       seg_length, tau, dt, integrate_iter, obstacle, beta, gamma)
+                       seg_length, tau, dt, integrate_iter, obstacle, beta, gamma,k)
         except rospy.ServiceException as e:
             rospy.logerr("Service call fails: %s"%e)
             exit()
@@ -115,8 +115,24 @@ class motionGeneration():
     
         return resp
 
+def generate_cube_mesh(center, size, resolution):
+    # Generate meshgrid
+    x = np.linspace(center[0] - size[0]/2, center[0] + size[0]/2, resolution)
+    y = np.linspace(center[1] - size[1]/2, center[1] + size[1]/2, resolution)
+    z = np.linspace(center[2] - size[2]/2, center[2] + size[2]/2, resolution)
 
-def get_cube(o_x, o_y, o_z, W=0.1, D=0.1, H=0.1):
+    x, y, z = np.meshgrid(x, y, z)
+
+    # Flatten the meshgrid and organize into a numpy array
+    vertices = np.column_stack((x.flatten(), y.flatten(), z.flatten()))
+
+    return vertices
+
+def get_cube(center, size):
+
+    if len(size)<3:
+        size=[size,size,size]
+
     phi = np.arange(1,10,2)*np.pi/4
     Phi, Theta = np.meshgrid(phi, phi) 
 
@@ -125,9 +141,9 @@ def get_cube(o_x, o_y, o_z, W=0.1, D=0.1, H=0.1):
     z = np.cos(Theta)/np.sqrt(2)
 
     # Change the centroid of the cube from zero to values in data frame
-    x = x*W + o_x
-    y = y*D + o_y
-    z = z*H + o_z
+    x = x*size[0] + center[0]
+    y = y*size[1] + center[1]
+    z = z*size[2] + center[2]
 
     return x,y,z    
     
@@ -144,41 +160,61 @@ if __name__ == "__main__":
     D=2.0 * np.sqrt(K)
     num_bases=100
 
-    gamma=1000.0
-    beta=18.0 / math.pi
+    gamma=[200.0,500.0,15.0]
+    beta=[5.0,4.0,0]
+    k=[6.0,5.0,8.0]
     
     dims = 6
 
-    plot_obstacle_bbox = True
-    #obstacle_bbox = [0.05,0.05,0.05]  # centroid X,Y,Z and size W,D,H
-    obstacle_bbox = [0.1, 0.15, 0.2]
+    # Cube mesh params
+    obstacle_centroid = [-0.1, 0.37, 0.1]
+    #obstacle_size = [0.1,0.1,0.1]
+    obstacle_size = [0.2,0.2,0.2]
+    obstacle_mesh_resolution = 10
 
-    #obstacle_centroid = np.array([-0.157398, 0.376722, 0.20578])
-    obstacle_centroid = np.array([-0.2, 0.4, 0.1])
-    
-    # Path from file
-    traj=[]
-    file_path = os.path.join(os.getcwd(),'src/obstacle_avoidance/data/2_test_avoidance.txt')
-    with open(file_path, 'r') as inputFile:
-        lines = inputFile.readlines()
-        for line in lines:
-            coordinates = [float(coord) for coord in line.strip().split()]
-            traj.append(coordinates)
-    traj=np.array(traj)
+    # Import from file override params, use "" to generate from parameters
+    path_file = '' #'src/obstacle_avoidance/data/2_test_avoidance_path.txt'
+    obstacle_file = '' #'src/obstacle_avoidance/data/2_test_avoidance_obstacle.txt'
 
-    '''
-    # Parametric path
-    samples = 1000
-    traj = np.zeros((samples, 6))
-    
-    traj[:, 0] = np.linspace(0.35, -0.35, samples)
-    traj[:, 1] = np.concatenate((np.linspace(0.3, 0.4, samples//2),np.linspace(0.4, 0.3, samples//2)))
-    traj[:, 2] = 0.15
 
-    traj[:, 3] = 1.2
-    traj[:, 4] = 0.4
-    traj[:, 5] = -0.8
-    '''
+    if obstacle_file!="":
+        # Obstacle from file
+        obstacle_vertices=[]
+        obstacle_file_path = os.path.join(os.getcwd(),obstacle_file)
+        with open(obstacle_file_path, 'r') as inputFile:
+            lines = inputFile.readlines()
+            for line in lines:
+                point = [float(values) for values in line.strip().split()]
+                obstacle_vertices.append(point)
+        obstacle_vertices=np.array(obstacle_vertices)
+        obstacle_centroid = np.mean(obstacle_vertices, axis=0)
+    else:
+        # Generate cube mesh
+        obstacle_vertices = generate_cube_mesh(obstacle_centroid, obstacle_size, obstacle_mesh_resolution)
+    obstacle=obstacle_vertices.reshape(-1)
+
+    if path_file!='':
+        # Path from file
+        traj=[]
+        path_file_path = os.path.join(os.getcwd(),path_file)
+        with open(path_file_path, 'r') as inputFile:
+            lines = inputFile.readlines()
+            for line in lines:
+                coordinates = [float(coord) for coord in line.strip().split()]
+                traj.append(coordinates)
+        traj=np.array(traj)
+    else:
+        # Parametric path
+        samples = 1000
+        traj = np.zeros((samples, 6))
+        
+        traj[:, 0] = np.linspace(-0.45, 0.45, samples)
+        traj[:, 1] = np.concatenate((np.linspace(0.3, 0.4, samples//2),np.linspace(0.4, 0.3, samples//2)))
+        traj[:, 2] = np.concatenate((np.linspace(0.15, 0.2, samples//2),np.linspace(0.2, 0.15, samples//2)))
+
+        traj[:, 3] = 1.2
+        traj[:, 4] = 0.4
+        traj[:, 5] = -0.8
 
     mg.motion_x0 = traj[0,:].tolist()
     mg.motion_goal = traj[-1,:].tolist()
@@ -192,7 +228,8 @@ if __name__ == "__main__":
     final_pose = traj[-1,:].tolist()
 
     pla = DMPTraj()  
-    pla = mg.getPlan(initial_pose,final_pose,-1,[],None,tau=5,dt=0.008, obstacle=obstacle_centroid, beta=beta, gamma=gamma)
+    pla = mg.getPlan(initial_pose,final_pose,-1,[],None,tau=5,dt=0.008, obstacle=obstacle, beta=beta, gamma=gamma, k=k)
+    #pla = mg.getPlan(initial_pose,final_pose,-1,[],None,tau=5,dt=0.008, obstacle=obstacle_centroid, beta=beta, gamma=gamma, k=k)
 
     velocities=[]  
     positions=[]
@@ -209,24 +246,29 @@ if __name__ == "__main__":
     fontsize = 20
     labelpad=20
 
-    # Assigm real obtacle to plot
-    ax.scatter(obstacle_centroid[0], obstacle_centroid[1],obstacle_centroid[2], s=radius, color='tab:orange', label="Obstacle centroid")
-    if plot_obstacle_bbox:
-        xs,ys,zs = get_cube(obstacle_centroid[0],obstacle_centroid[1],obstacle_centroid[2],obstacle_bbox[0],obstacle_bbox[1],obstacle_bbox[2])
-        ax.plot_surface(xs, ys, zs, color='tab:blue',alpha=0.3)
     ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], 'tab:red', label="Demo",linewidth=linewidth)
     ax.scatter([[traj[0, 0], traj[-1, 0]]], [[traj[0, 1], traj[-1, 1]]], [[traj[0, 2], traj[-1, 2]]], s=radius, color='tab:red')
     ax.plot(dP[:, 0],dP[:, 1],dP[:, 2], 'tab:green', label="Desired", linewidth=linewidth)
     ax.scatter([[dP[0, 0], dP[-1, 0]]],[[dP[0, 1], dP[-1, 1]]],[[dP[0, 2], dP[-1, 2]]], s=radius, color='tab:green')
+    
+    ax.scatter(obstacle_centroid[0], obstacle_centroid[1],obstacle_centroid[2], s=radius, color='tab:orange', label="Obstacle centroid")
+    x,y,z = get_cube(obstacle_centroid,obstacle_size)       
+    ax.plot_surface(x,y,z, alpha=0.3, color='tab:blue')   
+    ax.plot([], [], 's', alpha=0.3, color='tab:blue', label="Obstacle")         
+    #ax.scatter(obstacle_vertices[:,0], obstacle_vertices[:,1],obstacle_vertices[:,2], s=radius, color='tab:blue', label="Obstacle",alpha=0.2)
+    
     ax.set_xlim([0.6,-0.6])
     ax.set_ylim([1.1,-0.3])
     ax.set_zlim([-0.6,0.6])
     ax.tick_params(labelsize=fontsize)
-    ax.set_xlabel('x', fontsize=fontsize*1.5, labelpad=labelpad)
-    ax.set_ylabel('y', fontsize=fontsize*1.5, labelpad=labelpad)
-    ax.set_zlabel('z', fontsize=fontsize*1.5, labelpad=labelpad)
+    ax.set_xlabel('X(m)', fontsize=fontsize*1.5, labelpad=labelpad*1.5)
+    ax.set_ylabel('Y(m)', fontsize=fontsize*1.5, labelpad=labelpad*1.5)
+    ax.set_zlabel('Z(m)', fontsize=fontsize*1.5, labelpad=labelpad*1.5)
+    ax.xaxis.pane.fill = False
+    ax.yaxis.pane.fill = False
+    ax.zaxis.pane.fill = False
     #ax.invert_yaxis() # Match robot base axis
-    ax.legend(fontsize=fontsize, ncol=3, loc="lower center", bbox_to_anchor=(0.5, -0.05))
+    ax.legend(fontsize=fontsize, ncol=4, loc="lower center", bbox_to_anchor=(0.5, -0.05))
     ax.set_title("DMP with APF", fontsize=fontsize*2, y=1.05)
     plt.tight_layout()
     plt.show()

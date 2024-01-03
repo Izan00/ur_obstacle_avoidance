@@ -481,7 +481,7 @@ public:
                     // Check if the collision is avoidable
                     if(collision_link_name!=end_effector_collision_link){
                         //Wait for object to clear path
-                        std::cout<<"Unable to avoid cosllison with "<<collision_object_name<<", waiting until removed from currect position..."<<std::endl;
+                        std::cout<<"Unable to avoid collision with "<<collision_object_name<<", waiting until removed from currect position..."<<std::endl;
                         while(collision_distance>0 && collision_distance<collision_threshold)
                         {
                             //current_point = getCurrentTrajectoryPoint(trajectory_ptr,current_point);
@@ -496,18 +496,29 @@ public:
                     {
                         std::cout<<"Getting cartesian DMP..."<<std::endl;
                         std::vector<geometry_msgs::Pose> path;
-                        getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, collision_point, cartesian_dmp_n_weights_per_dim, cartesain_dmp_gamma, cartesain_dmp_beta, cartesian_dmp_dt, cartesain_dmp_k, cartesain_dmp_d);
-                        //trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
-                        std::cout<<"Start time"<<trajectory_ptr->points[0].time_from_start<<std::endl;
-                        // TODO add custom validity check
-					    //sleep(5);
-                        current_point = 0;
-                        execution_time = trajectory_ptr->points.back().time_from_start.toSec() -  trajectory_ptr->points.front().time_from_start.toSec();
-                        goal_robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
-                                                    trajectory_ptr->points.back().positions);
-                        std::cout<<"New execution time: "<<execution_time<<std::endl;
-                        
-                        execution_start_time = std::chrono::high_resolution_clock::now();  
+                        bool valid_plan = getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, cartesian_dmp_n_weights_per_dim, cartesain_dmp_gamma, cartesain_dmp_beta, cartesian_dmp_dt, cartesain_dmp_k, cartesain_dmp_d);
+                        if(valid_plan)
+                        {
+                            //trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
+                            std::cout<<"Start time"<<trajectory_ptr->points[0].time_from_start<<std::endl;
+                            // TODO add custom validity check
+                            //sleep(5);
+                            current_point = 0;
+                            execution_time = trajectory_ptr->points.back().time_from_start.toSec() -  trajectory_ptr->points.front().time_from_start.toSec();
+                            goal_robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
+                                                        trajectory_ptr->points.back().positions);
+                            std::cout<<"New execution time: "<<execution_time<<std::endl;
+                            
+                            execution_start_time = std::chrono::high_resolution_clock::now();
+                        }  
+                        else
+                        {
+                            std::cout<<"Trget point blocked"<<std::endl;
+                            robot_exectuion_status.data = 4;
+                            robot_execution_status_publisher.publish(robot_exectuion_status);
+                            move_group_ptr->stop();
+                            return;
+                        }
                     }
                     robot_exectuion_status.data = 2;
                     robot_execution_status_publisher.publish(robot_exectuion_status);
@@ -564,7 +575,8 @@ public:
         return closest_point;
     };
 
-    geometry_msgs::Point calculateCentroid(const std::vector<geometry_msgs::Point>& points) 
+
+    std::vector<double> calculateCentroid(const std::vector<geometry_msgs::Point>& points) 
     {
         geometry_msgs::Point centroid;
         double numPoints = static_cast<double>(points.size());
@@ -584,11 +596,23 @@ public:
         centroid.y /= numPoints;
         centroid.z /= numPoints;
 
-        return centroid;
-    }
+        return std::vector<double> {centroid.x,centroid.y,centroid.z};
+    };
 
-    void getCartesianDmpPlan(trajectory_msgs::JointTrajectory::Ptr& trajectory_ptr, int current_point, std::string collision_object_name, std::vector<double> collision_point,
-                             int n_weights_per_dim = 100, double gamma=1000.0, double beta=4.0/M_PI, double dt=0.008, double K_gain=100.0, 
+    bool isPointInsideMeshBoundingBox(const shape_msgs::Mesh& mesh ,const std::vector<double>& point) 
+    {
+        for (const auto& vertex : mesh.vertices) {
+            if (point[0] < vertex.x || point[0] > vertex.x ||
+                point[1] < vertex.y || point[1] > vertex.y ||
+                point[2] < vertex.z || point[2] > vertex.z) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    bool getCartesianDmpPlan(trajectory_msgs::JointTrajectory::Ptr& trajectory_ptr, int current_point, std::string collision_object_name,
+                             int n_weights_per_dim = 100, double gamma=1000.0, double beta=4.0/M_PI, double k=1000.0,double dt=0.008, double K_gain=100.0, 
                              double D_gain=2.0 * pow(100,0.5), double tau=5, double t_0 = 0, std::vector<double> initial_velocities = {}, 
                              double seg_length=-1, int integrate_iter=1, std::vector<double> goal_thresh = {})
     {
@@ -599,10 +623,27 @@ public:
         //std::cout<<collision_obj.pose<<std::endl; // 0 for meshes
         shape_msgs::Mesh mesh = collision_obj.meshes[0];
         
-        geometry_msgs::Point obstacle_centroid = calculateCentroid(mesh.vertices);
+        std::vector<double> obstacle;
 
-        std::cout<<"Obstacle centorid: "<<obstacle_centroid.x<<" "<<obstacle_centroid.y<<" "<<obstacle_centroid.z<<std::endl;
-        std::cout<<"Obstacle collision point: "<<collision_point[0]<<" "<<collision_point[1]<<" "<<collision_point[2]<<std::endl;
+        std::ofstream obstacleOutputFile("obstacle.txt");
+        if (!obstacleOutputFile.is_open()) {
+            std::cerr << "Error opening obstacle file" << std::endl;
+        }
+        else
+        {
+            for (const auto& point : mesh.vertices) {
+                obstacle.push_back(point.x);
+                obstacle.push_back(point.y);
+                obstacle.push_back(point.z);
+
+                obstacleOutputFile << point.x<<" "<<point.y<<" "<<point.z<<'\n';
+            }
+            // Close the file
+            obstacleOutputFile.close();
+        }
+
+        //obstacle.push_back(calculateCentroid(mesh.vertices));
+        //std::cout<<"Obstacle: "<<obstacle_centroid[0][0]<<" "<<obstacle_centroid[0][1]<<" "<<obstacle_centroid[0][2]<<std::endl;
         
         // Convert joint trajectory to Cartesian path
         trajectory_msgs::JointTrajectoryPoint trajectory_point;
@@ -620,12 +661,11 @@ public:
         demo_traj.points.push_back(pt);
         */
 
-        std::ofstream outputFile("path.txt");
+        std::ofstream pathOutputFile("path.txt");
 
-        if (!outputFile.is_open()) {
-            std::cerr << "Error opening file" << std::endl;
+        if (!pathOutputFile.is_open()) {
+            std::cerr << "Error opening path file" << std::endl;
         }
-
 
         for (int i=current_point;i<trajectory_ptr->points.size(); i++)
         {
@@ -651,7 +691,7 @@ public:
                 demo_traj.times.push_back(dt*(i-current_point));
             //}
                 // Write each point to the file
-            outputFile << end_effector_position.x()<<" "<<end_effector_position.y()<<" "<<end_effector_position.z()<<" "<<
+            pathOutputFile << end_effector_position.x()<<" "<<end_effector_position.y()<<" "<<end_effector_position.z()<<" "<<
                                       end_effector_orientation.x()<<" "<<end_effector_orientation.y()<<" "<<end_effector_orientation.z()<< '\n';
             
         }
@@ -659,7 +699,11 @@ public:
         //sleep(30);
 
         // Close the file
-        outputFile.close();
+        pathOutputFile.close();
+
+        // Check if obstacle is blocking target point
+        if (isPointInsideMeshBoundingBox(mesh,demo_traj.points.back().positions))
+            return false;
 
         dmp::LearnDMPFromDemo::Request l_req;
         l_req.demo = demo_traj;
@@ -711,11 +755,11 @@ public:
         g_req.tau=tau;
         g_req.dt=dt;
         g_req.integrate_iter=integrate_iter;
-        g_req.beta=beta;
-        g_req.gamma=gamma;
-        g_req.obstacle=std::vector<double>{obstacle_centroid.x,obstacle_centroid.y,obstacle_centroid.z};
-		//g_req.obstacle=collision_point;
-		dmp::GetDMPPlan::Response g_res; 
+        g_req.beta=std::vector<double>{beta,0,0};
+        g_req.gamma=std::vector<double>{gamma,0,0};
+        g_req.k=std::vector<double>{0,0,0};
+        g_req.obstacle=obstacle;
+        dmp::GetDMPPlan::Response g_res; 
         
         bool plan_received = get_dmp_plan_client.call(g_req, g_res);
 
@@ -724,6 +768,7 @@ public:
         std::vector<geometry_msgs::Twist> velocities;
         geometry_msgs::PoseStamped stamped_pose;
         geometry_msgs::Twist vel;
+        EigenSTL::vector_Isometry3d eigen_pose_path;
         for(int i=0;i<g_res.plan.points.size();i++)
         {   
             //std::cout<<g_res.plan.times[i]<<std::endl;
@@ -765,6 +810,7 @@ public:
         
         trajectory_ptr = boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
         //sleep(60);
+        return true;
     };
 
     Eigen::Quaterniond eulerZYXToQauternion(std::vector<double> euler_angles)
