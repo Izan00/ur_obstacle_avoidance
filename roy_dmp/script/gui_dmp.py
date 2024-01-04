@@ -227,10 +227,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def setAvoidance(self,state):
         if state == Qt.Checked:
             self.avoidance_enabled = True
+            self.ui.safeStopCheckBox.setEnabled(False)
         else:
             self.avoidance_enabled = False
             self.ui.execute_collisionCheck_PB.setStyleSheet("background-color: gray")
             self.ui.execute_plan_pushButton.setEnabled(False)  
+            self.ui.safeStopCheckBox.setEnabled(True)
         '''
         if state == Qt.Checked:
             self.avoidance_enabled = True
@@ -255,8 +257,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def setSafeStop(self,state):
         if state == Qt.Checked:
             self.safe_stop_enabled = True
+            self.ui.avoidanceCheckBox.setEnabled(False)
         else:
             self.safe_stop_enabled = False
+            self.ui.avoidanceCheckBox.setEnabled(True)
 
     def setIPRobot(self,text):
         self.IP = text
