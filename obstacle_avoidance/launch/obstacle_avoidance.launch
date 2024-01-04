@@ -59,20 +59,20 @@
   </node>
   
   <!-- Collision avoidance node (detect collsions with object in the workspace an generate a collision avoding trajectory)-->
-  <param name="cartesain_dmp_gamma" type="double" value="1500.0"/>
-  <param name="cartesain_dmp_beta" type="double" value="3.8197"/>
+  <param name="cartesain_dmp_gamma_obs" type="double" value="200.0"/>
+  <param name="cartesain_dmp_beta_obs" type="double" value="5.0"/>
+  <param name="cartesain_dmp_k_obs" type="double" value="6.0"/>
+  <param name="cartesain_dmp_gamma_np" type="double" value="500.0"/>
+  <param name="cartesain_dmp_beta_np" type="double" value="4.0"/>
+  <param name="cartesain_dmp_k_np" type="double" value="5.0"/>
+  <param name="cartesain_dmp_gamma_d" type="double" value="15.0"/>
+  <param name="cartesain_dmp_k_d" type="double" value="8.0"/>
 
   <node name="collision_check" pkg="obstacle_avoidance" type="collision_check" output="screen"/> 
-   
+  
   <group ns="cartesian">
   <node name="dmp_timed_roslaunch" pkg="timed_roslaunch" type="timed_roslaunch.sh" args="2 dmp dmp.launch" output="screen"/>
-  <!--
-  <include file="$(find timed_roslaunch)/launch/timed_roslaunch.launch">
-    <arg name="time" value="2" />
-    <arg name="pkg" value="dmp" />
-    <arg name="file" value="dmp.launch" />
-  </include>
-  -->
   </group>
+  
 
 </launch>

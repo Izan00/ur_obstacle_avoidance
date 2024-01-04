@@ -21,9 +21,9 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-add_message_files(
-  FILES
-)
+#add_message_files(
+#  FILES
+#)
 
 generate_messages(
   DEPENDENCIES

@@ -1,6 +1,10 @@
 #include <ros/ros.h>
 #include "obstacle_avoidance.h"
 
+#include <string>
+#include <iostream>
+
+
 #include<dmp/GetDMPPlan.h> 
 #include<dmp/LearnDMPFromDemo.h> 
 #include<dmp/SetActiveDMP.h> 
@@ -21,6 +25,15 @@ public:
 
         std::string cartesian_dmp_service_namespace;
 
+        double cartesain_dmp_gamma_obs; 
+        double cartesain_dmp_beta_obs; 
+        double cartesain_dmp_k_obs; 
+        double cartesain_dmp_gamma_np; 
+        double cartesain_dmp_beta_np; 
+        double cartesain_dmp_k_np; 
+        double cartesain_dmp_gamma_d; 
+        double cartesain_dmp_k_d; 
+
         // Parameters update
         nh.param<std::string>("trajectory_sub_topic", trajectory_sub_topic, "/robot_global_trajectory");
         nh.param<std::string>("avoidance_execute_sub_topic", avoidance_execute_sub_topic, "/avoidance_execute");
@@ -33,10 +46,28 @@ public:
 
         nh.param<double>("cartesian_dmp_speed_scale", cartesian_dmp_speed_scale, 1.0); 
         nh.param<double>("cartesian_dmp_dt", cartesian_dmp_dt, 0.01); 
-        nh.param<double>("cartesain_dmp_gamma", cartesain_dmp_gamma, 1500.0); 
-        nh.param<double>("cartesain_dmp_beta", cartesain_dmp_beta, 12.0/M_PI); 
-        nh.param<double>("cartesain_dmp_k", cartesain_dmp_k, 100); 
-        nh.param<double>("cartesain_dmp_d", cartesain_dmp_d, 2.0*pow(cartesain_dmp_k,0.5)); 
+
+        nh.param<double>("cartesain_dmp_K", cartesain_dmp_K, 100); 
+        nh.param<double>("cartesain_dmp_D", cartesain_dmp_D, 2.0*pow(cartesain_dmp_K,0.5)); 
+
+        nh.param<double>("cartesain_dmp_gamma_obs", cartesain_dmp_gamma_obs, 200.0); 
+        nh.param<double>("cartesain_dmp_beta_obs", cartesain_dmp_beta_obs, 5.0); 
+        nh.param<double>("cartesain_dmp_k_obs", cartesain_dmp_k_obs, 6.0); 
+        nh.param<double>("cartesain_dmp_gamma_np", cartesain_dmp_gamma_np, 500.0); 
+        nh.param<double>("cartesain_dmp_beta_np", cartesain_dmp_beta_np, 4.0); 
+        nh.param<double>("cartesain_dmp_k_np", cartesain_dmp_k_np, 5.0); 
+        nh.param<double>("cartesain_dmp_gamma_d", cartesain_dmp_gamma_d, 15.0); 
+        nh.param<double>("cartesain_dmp_k_d", cartesain_dmp_k_d, 8.0); 
+
+        cartesain_dmp_gamma.push_back(cartesain_dmp_gamma_obs);
+        cartesain_dmp_gamma.push_back(cartesain_dmp_gamma_np);
+        cartesain_dmp_gamma.push_back(cartesain_dmp_gamma_d);
+        cartesain_dmp_beta.push_back(cartesain_dmp_beta_obs);
+        cartesain_dmp_beta.push_back(cartesain_dmp_beta_np);
+        cartesain_dmp_beta.push_back(cartesain_dmp_k_obs);
+        cartesain_dmp_k.push_back(cartesain_dmp_k_np);
+        cartesain_dmp_k.push_back(cartesain_dmp_k_d);
+
         nh.param<int>("cartesian_dmp_n_weights_per_dim", cartesian_dmp_n_weights_per_dim, 100);
         nh.param<int>("cartesian_dmp_n_bases", cartesian_dmp_n_bases, 100);  
         nh.param<double>("ik_jump_threshold_factor", ik_jump_threshold_factor, 0.05);
@@ -63,6 +94,7 @@ public:
         if(cartesian_dmp_service_namespace.size()>0)
             cartesian_dmp_service_namespace = cartesian_dmp_service_namespace+"/";
 
+        std::cout<<cartesian_dmp_service_namespace+"get_dmp_plan"<<std::endl;
         get_dmp_plan_client = nh.serviceClient<dmp::GetDMPPlan>(cartesian_dmp_service_namespace+"get_dmp_plan");
         learn_dmp_from_demo_client = nh.serviceClient<dmp::LearnDMPFromDemo>(cartesian_dmp_service_namespace+"learn_dmp_from_demo");
         set_active_dmp_client = nh.serviceClient<dmp::SetActiveDMP>(cartesian_dmp_service_namespace+"set_active_dmp");
@@ -189,20 +221,23 @@ public:
         moveit_msgs::RobotState robot_state_msg;
         moveit::core::robotStateToRobotStateMsg(*move_group_ptr->getCurrentState(), robot_state_msg);
         moveit::planning_interface::MoveGroupInterface::Plan plan;
+        
         if (initial_point>0)
         {
             std::vector<trajectory_msgs::JointTrajectoryPoint>  points = trajectory->points;
             std::vector<trajectory_msgs::JointTrajectoryPoint> trimed_points(points.begin() + initial_point, points.end());
             plan.trajectory_.joint_trajectory.points = trimed_points;
-            plan.trajectory_.joint_trajectory.header = trajectory->header;
-            plan.trajectory_.joint_trajectory.joint_names = trajectory->joint_names;
+        
         }
         else
-            plan.trajectory_.joint_trajectory = *trajectory;
+            plan.trajectory_.joint_trajectory.points = trajectory->points;
+            
+        plan.trajectory_.joint_trajectory.joint_names = trajectory->joint_names;
         plan.start_state_  = robot_state_msg;
         trajectory_msgs::JointTrajectoryPoint start_point;
         start_point.positions = robot_state_msg.joint_state.position;
         start_point.velocities = std::vector<double>(6,0);
+        start_point.time_from_start = ros::Duration(0.0);
         plan.trajectory_.joint_trajectory.points.insert(plan.trajectory_.joint_trajectory.points.begin(), start_point);
 
         return plan;    
@@ -496,7 +531,7 @@ public:
                     {
                         std::cout<<"Getting cartesian DMP..."<<std::endl;
                         std::vector<geometry_msgs::Pose> path;
-                        bool valid_plan = getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, cartesian_dmp_n_weights_per_dim, cartesain_dmp_gamma, cartesain_dmp_beta, cartesian_dmp_dt, cartesain_dmp_k, cartesain_dmp_d);
+                        bool valid_plan = getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, cartesian_dmp_n_weights_per_dim, cartesain_dmp_gamma, cartesain_dmp_beta, cartesain_dmp_k, cartesian_dmp_dt, cartesain_dmp_K, cartesain_dmp_D);
                         if(valid_plan)
                         {
                             //trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
@@ -612,7 +647,7 @@ public:
     };
 
     bool getCartesianDmpPlan(trajectory_msgs::JointTrajectory::Ptr& trajectory_ptr, int current_point, std::string collision_object_name,
-                             int n_weights_per_dim = 100, double gamma=1000.0, double beta=4.0/M_PI, double k=1000.0,double dt=0.008, double K_gain=100.0, 
+                             int n_weights_per_dim = 100, std::vector<double> gamma={200.0,500.0,15.0}, std::vector<double> beta={5.0,6.0}, std::vector<double> k={6.0,5.0,8.0},double dt=0.008, double K_gain=100.0, 
                              double D_gain=2.0 * pow(100,0.5), double tau=5, double t_0 = 0, std::vector<double> initial_velocities = {}, 
                              double seg_length=-1, int integrate_iter=1, std::vector<double> goal_thresh = {})
     {
@@ -755,9 +790,9 @@ public:
         g_req.tau=tau;
         g_req.dt=dt;
         g_req.integrate_iter=integrate_iter;
-        g_req.beta=std::vector<double>{beta,0,0};
-        g_req.gamma=std::vector<double>{gamma,0,0};
-        g_req.k=std::vector<double>{0,0,0};
+        g_req.beta=beta;
+        g_req.gamma=gamma;
+        g_req.k=k;
         g_req.obstacle=obstacle;
         dmp::GetDMPPlan::Response g_res; 
         
@@ -858,10 +893,11 @@ private:
     // Cartesian DMP
     double cartesian_dmp_speed_scale;
     double cartesian_dmp_dt;
-    double cartesain_dmp_gamma;
-    double cartesain_dmp_beta;
-    double cartesain_dmp_k;
-    double cartesain_dmp_d;
+    double cartesain_dmp_K;
+    double cartesain_dmp_D;
+    std::vector<double> cartesain_dmp_gamma;
+    std::vector<double> cartesain_dmp_beta;
+    std::vector<double> cartesain_dmp_k;
     int cartesian_dmp_n_weights_per_dim;
     int cartesian_dmp_n_bases;
     double ik_jump_threshold_factor;
