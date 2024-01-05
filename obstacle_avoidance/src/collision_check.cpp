@@ -64,7 +64,7 @@ public:
         cartesain_dmp_gamma.push_back(cartesain_dmp_gamma_d);
         cartesain_dmp_beta.push_back(cartesain_dmp_beta_obs);
         cartesain_dmp_beta.push_back(cartesain_dmp_beta_np);
-        cartesain_dmp_beta.push_back(cartesain_dmp_k_obs);
+        cartesain_dmp_k.push_back(cartesain_dmp_k_obs);
         cartesain_dmp_k.push_back(cartesain_dmp_k_np);
         cartesain_dmp_k.push_back(cartesain_dmp_k_d);
 
@@ -231,7 +231,7 @@ public:
         }
         else
             plan.trajectory_.joint_trajectory.points = trajectory->points;
-            
+
         plan.trajectory_.joint_trajectory.joint_names = trajectory->joint_names;
         plan.start_state_  = robot_state_msg;
         trajectory_msgs::JointTrajectoryPoint start_point;
@@ -492,8 +492,19 @@ public:
                 move_group_ptr->stop();
                 return;
             }
+            auto start_time = std::chrono::high_resolution_clock::now();
             current_point = getCurrentTrajectoryPoint(trajectory_ptr, current_point);
+            auto end_time = std::chrono::high_resolution_clock::now();
+            double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
+            std::cout<<"Trajectory loc execution time: "<<duration<< std::endl;
+
+
+            start_time = std::chrono::high_resolution_clock::now();
             collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_link_name, collision_point, current_point);        
+            end_time = std::chrono::high_resolution_clock::now();
+            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
+            std::cout<<"Collision check execution time: "<<duration<< std::endl;
+
             //std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;
             if(debug)
                 std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<" - Duration: "<<execution_duration<<" -  Goal dist: "<<goal_dist<<std::endl;
@@ -523,7 +534,7 @@ public:
                             collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_link_name, collision_point, current_point);
                             //std::cout<<"Current point: "<<current_point<<" - Collision dist: "<<collision_distance<<std::endl;
                         }
-                        std::cout<<"Collision clreared"<<std::endl;
+                        std::cout<<"Collision cleared"<<std::endl;
                         auto stop_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - stop_start_time);
                         execution_start_time = execution_start_time-stop_duration;
                     }
@@ -548,7 +559,7 @@ public:
                         }  
                         else
                         {
-                            std::cout<<"Trget point blocked"<<std::endl;
+                            std::cout<<"Target point blocked"<<std::endl;
                             robot_exectuion_status.data = 4;
                             robot_execution_status_publisher.publish(robot_exectuion_status);
                             move_group_ptr->stop();
@@ -796,7 +807,11 @@ public:
         g_req.obstacle=obstacle;
         dmp::GetDMPPlan::Response g_res; 
         
+        auto start_time = std::chrono::high_resolution_clock::now();
         bool plan_received = get_dmp_plan_client.call(g_req, g_res);
+        auto end_time = std::chrono::high_resolution_clock::now();
+        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
+        std::cout <<"DMP req execution time: "<<duration<< std::endl;
 
         std::vector<geometry_msgs::Pose> positions;
         std::vector<geometry_msgs::PoseStamped> stamped_positions;
@@ -841,7 +856,12 @@ public:
         std::cout<<"Plan from cartesian trajectory..."<<std::endl;
         double speed_scaling = 1/3.0;
         double initial_pose_th = 0.02;
+        
+        start_time = std::chrono::high_resolution_clock::now();
         trajectory_msgs::JointTrajectory trajectory = cartesianPathToJointTrajectory(positions, dt, initial_pose_th, speed_scaling);
+        end_time = std::chrono::high_resolution_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
+        std::cout <<"IK execution time: "<<duration<< std::endl;
         
         trajectory_ptr = boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
         //sleep(60);

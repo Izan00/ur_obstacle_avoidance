@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <model name="cube">
+  <model name="sphere">
     <static>true</static>
     <pose>0 0 0 0 0 0</pose>
     <link name="link">
       <visual name="visual">
         <geometry>
-          <box>
-            <size>0.10 0.15 0.2</size> <!-- Adjust the size of the cube here -->
-          </box>
+          <sphere>
+            <radius>0.075</radius> <!-- Adjust the size of the sphere here -->
+          </sphere>
         </geometry>
         <material>
           <ambient>0 0 1 1</ambient>
@@ -19,9 +19,9 @@
       </visual>
       <collision name="collision">
         <geometry>
-          <box>
-            <size>0.10 0.15 0.2</size> <!-- Adjust the size of the cube here -->
-          </box>
+          <sphere>
+            <radius>0.075</radius> <!-- Adjust the size of the sphere here -->
+          </sphere>
         </geometry>
         <surface>
           <contact>

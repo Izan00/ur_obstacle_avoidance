@@ -60,11 +60,11 @@ public:
                     dist = std::min(dist, temp_dist);
                 }
                 movement += dist;
-                std::cout << "Dist: " << dist << std::endl;
+                //std::cout << "Dist: " << dist << std::endl;
             }
         }
 
-        std::cout << "Movement: " << movement << std::endl;
+        //std::cout << "Movement: " << movement << std::endl;
 
         prev_centroids = centroids;
 
@@ -79,7 +79,7 @@ public:
             still_count += 1;
         }
 
-        std::cout << "Still: " << still << std::endl;
+        //std::cout << "Still: " << still << std::endl;
 
         std_msgs::Bool safe_stop_msg;
         safe_stop_msg.data = !still;

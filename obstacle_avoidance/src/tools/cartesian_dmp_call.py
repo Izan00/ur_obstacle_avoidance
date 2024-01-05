@@ -160,20 +160,25 @@ if __name__ == "__main__":
     D=2.0 * np.sqrt(K)
     num_bases=100
 
-    gamma=[200.0,500.0,15.0]
+    #gamma=[400.0,200.0,5.0]
+    #beta=[5.0,4.0,0]
+    #k=[0.0,6.0,20.0]
+    gamma=[200.0,500.0,10.0]
     beta=[5.0,4.0,0]
-    k=[6.0,5.0,8.0]
+    k=[0.0,5.0,8.0]
     
     dims = 6
 
     # Cube mesh params
-    obstacle_centroid = [-0.1, 0.37, 0.1]
-    #obstacle_size = [0.1,0.1,0.1]
-    obstacle_size = [0.2,0.2,0.2]
+    #obstacle_centroid = [-0.1, 0.37, 0.1]
+    #obstacle_size = [0.2,0.2,0.2]
+    obstacle_centroid = [-0.0, 0.4, 0.18] 
+    obstacle_size = [0.10, 0.15, 0.2]
+    
     obstacle_mesh_resolution = 10
 
     # Import from file override params, use "" to generate from parameters
-    path_file = '' #'src/obstacle_avoidance/data/2_test_avoidance_path.txt'
+    path_file = 'src/obstacle_avoidance/data/real_test_path.txt' #'src/obstacle_avoidance/data/2_test_avoidance_path.txt'
     obstacle_file = '' #'src/obstacle_avoidance/data/2_test_avoidance_obstacle.txt'
 
 

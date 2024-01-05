@@ -18,9 +18,18 @@ public:
         nh_.param<int>("max_samples", max_cluster_size, 25000);
         nh_.param<double>("cluster_tolerance", cluster_tolerance, 0.05);
         nh_.param<int>("cluster_size_th", cluster_size_th, 50);
-        nh_.param<bool>("save_cloud", save_cloud, false);
+        nh_.param<bool>("save_input_cloud", save_input_cloud, false);
+        nh_.param<bool>("save_cluster_cloud", save_cluster_cloud, false);
         nh_.param<bool>("save_mesh", save_mesh, false);
-        nh_.param<double>("alpha", alpha, 0.0);
+        nh_.param<double>("delaunay_alpha", delaunay_alpha, 0.0);
+        nh_.param<double>("delaunay_tolerance", delaunay_tolerance, 0.0);
+        nh_.param<double>("delaunay_offset", delaunay_offset, 0.0);
+        nh_.param<double>("gaussian_radius", gaussian_radius, 0.03);
+        nh_.param<int>("gaussian_dimensions", gaussian_dimensions, 50);
+        nh_.param<int>("convex_hull_planes", convex_hull_planes, 5);
+        nh_.param<double>("convex_hull_shrinkwrap_sphere_radius", convex_hull_shrinkwrap_sphere_radius, 1.0);
+        nh_.param<int>("convex_hull_shrinkwrap_sphere_angle_resolution", convex_hull_shrinkwrap_sphere_angle_resolution, 50);
+        nh_.param<double>("convex_hull_shrinkwrap_resolution", convex_hull_shrinkwrap_resolution, 0.04);
         nh_.param<std::string>("mesh_algo", mesh_algo, "d3d");
         nh_.param<std::string>("cloud_sub_topic", cloud_sub_topic, "/camera/depth/color/points_filtered");
         nh_.param<std::string>("centroids_pub_topic", centroids_pub_topic, "/centroids");
@@ -93,29 +102,75 @@ public:
 
         vtkSmartPointer<vtkDelaunay2D> delaunay = vtkSmartPointer<vtkDelaunay2D>::New();
         vtkSmartPointer<vtkDelaunay3D> delaunay3D = vtkSmartPointer<vtkDelaunay3D>::New();
-        vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+        vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
         
         if(mesh_algo == "d2d")
         {
-            // Perform Delaunay triangulation
+            // Perform Delaunay 2D triangulation
             delaunay->SetInputData(polydata);
-            delaunay->SetAlpha(alpha);
+            delaunay->SetAlpha(delaunay_alpha);
             // Extract the surface of the triangulation
+            vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
             surfaceFilter->SetInputConnection(delaunay->GetOutputPort());
+
+            // Clean the polydata
+            cleanPolyData->SetInputConnection(surfaceFilter->GetOutputPort());
         }
         else if(mesh_algo == "d3d")
         {
-            // Perform Delaunay triangulation
+            // Perform Delaunay 3D triangulation
             delaunay3D->SetInputData(polydata);
-            delaunay3D->SetAlpha(alpha);
+            delaunay3D->SetAlpha(delaunay_alpha);
+            //delaunay3D->SetTolerance(delaunay_tolerance);
+            //delaunay3D->SetOffset(delaunay_offset);
             // Extract the surface of the triangulation
+            vtkSmartPointer<vtkDataSetSurfaceFilter> surfaceFilter = vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
             surfaceFilter->SetInputConnection(delaunay3D->GetOutputPort());
+            // Clean the polydata
+            cleanPolyData->SetInputConnection(surfaceFilter->GetOutputPort());
         }
-
-        // Clean the polydata
-        vtkSmartPointer<vtkCleanPolyData> cleanPolyData = vtkSmartPointer<vtkCleanPolyData>::New();
-        cleanPolyData->SetInputConnection(surfaceFilter->GetOutputPort());
-
+        else if(mesh_algo == "gauss")
+        {   
+            //Perform Gaussian Splatter
+            vtkSmartPointer<vtkGaussianSplatter> splatter = vtkSmartPointer<vtkGaussianSplatter>::New();;
+            splatter->SetInputData(polydata);
+            splatter->SetSampleDimensions(gaussian_dimensions,gaussian_dimensions,gaussian_dimensions);
+            splatter->SetRadius(gaussian_radius);
+            splatter->ScalarWarpingOff();
+            // Extract the surface
+            vtkSmartPointer<vtkContourFilter> surfaceFilter = vtkSmartPointer<vtkContourFilter>::New();
+            surfaceFilter->SetInputConnection(splatter->GetOutputPort());
+            surfaceFilter->SetValue(0, 0.01);
+            // Clean the polydata
+            cleanPolyData->SetInputConnection(surfaceFilter->GetOutputPort());
+        }
+        else if(mesh_algo == "unp")
+        {
+            // Perform Surface Reconstruction
+            vtkSmartPointer<vtkSurfaceReconstructionFilter> surface = vtkSmartPointer<vtkSurfaceReconstructionFilter>::New();;
+            surface->SetInputData(polydata);
+            // Extract the surface
+            vtkSmartPointer<vtkContourFilter> surfaceFilter = vtkSmartPointer<vtkContourFilter>::New();
+            surfaceFilter->SetInputConnection(surface->GetOutputPort());
+            surfaceFilter->SetValue(0, 0.0);
+            // Rpair normals
+            vtkSmartPointer<vtkReverseSense> reverse = vtkSmartPointer<vtkReverseSense>::New();
+            reverse->SetInputConnection(surfaceFilter->GetOutputPort());
+            reverse->ReverseCellsOn();
+            reverse->ReverseNormalsOn();   
+            // Clean the polydata
+            cleanPolyData->SetInputConnection(reverse->GetOutputPort());
+        }
+        else if(mesh_algo == "ch")
+        {
+            vtkSmartPointer<vtkHull> hullFilter = vtkSmartPointer<vtkHull>::New();
+            hullFilter->SetInputData(polydata);
+            hullFilter->AddCubeFacePlanes();
+            hullFilter->AddRecursiveSpherePlanes(convex_hull_planes);
+            // Clean the polydata
+            cleanPolyData->SetInputConnection(hullFilter->GetOutputPort());
+        }
+        
         // Avoid segmentation fault before mesh conversion
         cleanPolyData->Update();
 
@@ -200,18 +255,21 @@ public:
         pcl::PointCloud<pcl::PointXYZ> cloud;
         pcl::fromROSMsg(*cloud_msg, cloud);
 
+        // Save the point cloud to PCD file (ASCII format)
+
 		std::vector<pcl::PointCloud<pcl::PointXYZ>> clusters;
         std::vector<Eigen::Vector4f> centroids;
         
         // Comput centroids when cloud has points
         if (!cloud.empty())
         {
-           createClusters(cloud, clusters, centroids);
+            if(save_input_cloud)
+                pcl::io::savePCDFileASCII("input_cloud.pcd", cloud);
+            createClusters(cloud, clusters, centroids);
         }
         else
-        {
 		   centroids.clear();
-		}
+		
 
         // Publish centrids 
         publishCentroids(centroids, cloud_msg->header);
@@ -232,13 +290,17 @@ public:
             clusterPtr = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>(clusters[i]);
             
             // Save the point cloud to PCD file (ASCII format)
-            if(save_cloud)
+            if(save_cluster_cloud)
             {  
                 pcl::io::savePCDFileASCII(cluster_name+".pcd", *clusterPtr);
             }
 
             // Create mesh from cluster
+            auto start_time = std::chrono::high_resolution_clock::now();
             createMesh(clusterPtr, mesh, cluster_name);
+            auto end_time = std::chrono::high_resolution_clock::now();
+            double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
+            //std::cout <<"Mesh execution time: "<<duration<< std::endl;
            
             meshes.push_back(mesh);
             // Update collision objec in planning scene
@@ -283,7 +345,8 @@ private:
     ros::Publisher centroids_marker_pub;
 
     // Clustering
-    bool save_cloud;
+    bool save_input_cloud;
+    bool save_cluster_cloud;
     int min_cluster_size;
     int max_cluster_size;
     double cluster_tolerance;
@@ -292,7 +355,15 @@ private:
     // Mesh reconstruction
     std::string mesh_algo; // d3d, d2d
     bool save_mesh;
-    double alpha;
+    double delaunay_alpha;
+    double delaunay_tolerance;
+    double delaunay_offset;
+    double gaussian_radius;
+    int gaussian_dimensions;
+    int convex_hull_planes;
+    double convex_hull_shrinkwrap_sphere_radius;
+    int convex_hull_shrinkwrap_sphere_angle_resolution;
+    double convex_hull_shrinkwrap_resolution;
 
     std::vector<std::string> collisions;
 

@@ -11,7 +11,7 @@
   <node pkg="nodelet" type="nodelet" name="voxel_grid_nodelet" args="load pcl/VoxelGrid pcl_manager_nodelet" output="screen">
     <remap from="~input" to="/camera/depth/color/points" />
     <remap from="~output" to="/camera/depth/color/points_sampled" />
-    <param name="leaf_size" type="double" value="0.01" />
+    <param name="leaf_size" type="double" value="0.02" />
     <param name="filter_limit_min" type="double" value="0.0" />
     <param name="filter_limit_max" type="double" value="100" />
   </node>
@@ -38,15 +38,25 @@
 
   <!-- Collsion volume reconstruction (add collsion objects in the virtual workspace model) -->
   <node name="collision_volume_reconstruction_node" pkg="obstacle_avoidance" type="collision_volume_reconstruction" output="screen"> 
-    <param name="leaf_size" type="double" value="0.01" />
     <param name="min_cluster_size" type="int" value="1"/>
     <param name="max_samples" type="int" value="25000"/>
     <param name="cluster_tolerance" type="double" value="0.05"/>
     <param name="cluster_size_th" type="int" value="50"/>
-    <param name="save_cloud" type="bool" value="false"/>
-    <param name="save_mesh" type="bool" value="false"/>
-    <param name="alpha" type="double" value="0.0"/>
-    <param name="mesh_algo" type="string" value="d3d"/>
+    <param name="save_input_cloud" type="bool" value="true"/>
+    <param name="save_cluster_cloud" type="bool" value="true"/>
+    <param name="save_mesh" type="bool" value="true"/>
+    <param name="mesh_algo" type="string" value="d3d"/> <!-- d3d / d2d / gauss / ch / unp -->
+
+    <param name="delaunay_alpha" type="double" value="0.0"/>
+    <param name="delaunay_tolerance" type="double" value="0.0"/>
+    <param name="delaunay_offset" type="double" value="0.0"/>
+
+    <param name="gaussian_radius" type="double" value="0.05"/>
+    <param name="gaussian_dimensions" type="int" value="50"/>
+    <param name="convex_hull_planes" type="int" value="5"/>
+    <param name="convex_hull_shrinkwrap_sphere_radius" type="double" value="1.0"/>
+    <param name="convex_hull_shrinkwrap_angle_resolution" type="int" value="50"/>
+    <param name="convex_hull_shrinkwrap_resolution" type="double" value="0.01"/>
     <param name="cloud_sub_topic" type="string" value="/camera/depth/color/points_filtered"/>
     <param name="centroids_pub_topic" type="string" value="/centroids"/>
     <param name="centroids_marker_pub_topic" type="string" value="/centroids_marker"/>
@@ -59,14 +69,16 @@
   </node>
   
   <!-- Collision avoidance node (detect collsions with object in the workspace an generate a collision avoding trajectory)-->
-  <param name="cartesain_dmp_gamma_obs" type="double" value="200.0"/>
+  <param name="cartesain_dmp_gamma_obs" type="double" value="400.0"/>
+  <param name="cartesain_dmp_k_obs" type="double" value="0.0"/>
   <param name="cartesain_dmp_beta_obs" type="double" value="5.0"/>
-  <param name="cartesain_dmp_k_obs" type="double" value="6.0"/>
-  <param name="cartesain_dmp_gamma_np" type="double" value="500.0"/>
+
+  <param name="cartesain_dmp_gamma_np" type="double" value="200.0"/>
+  <param name="cartesain_dmp_k_np" type="double" value="6.0"/>
   <param name="cartesain_dmp_beta_np" type="double" value="4.0"/>
-  <param name="cartesain_dmp_k_np" type="double" value="5.0"/>
-  <param name="cartesain_dmp_gamma_d" type="double" value="15.0"/>
-  <param name="cartesain_dmp_k_d" type="double" value="8.0"/>
+
+  <param name="cartesain_dmp_gamma_d" type="double" value="5.0"/>
+  <param name="cartesain_dmp_k_d" type="double" value="20.0"/>
 
   <node name="collision_check" pkg="obstacle_avoidance" type="collision_check" output="screen"/> 
   

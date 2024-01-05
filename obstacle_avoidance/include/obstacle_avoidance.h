@@ -67,6 +67,15 @@
 #include <vtkSmoothPolyDataFilter.h>
 #include <vtkDelaunay2D.h>
 #include <vtkDelaunay3D.h>
+#include <vtkGaussianSplatter.h>
+#include <vtkSurfaceReconstructionFilter.h>
+#include <vtkReverseSense.h>
+#include <vtkHull.h>
+#include <vtkSphereSource.h>
+#include <vtkSmoothPolyDataFilter.h>
+#include <vtkPCANormalEstimation.h>
+#include <vtkGlyph3D.h>
+#include <vtkContourFilter.h>
 #include <vtkDataSetSurfaceFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkSTLWriter.h>

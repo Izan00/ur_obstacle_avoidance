@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
     rospy.init_node('load_obstacle')
 
-    model = ['cube', 'arm'][0]    
+    model = ['cube', 'sphere', 'arm'][0]    
     
     pose_increment = 0.01 # in m
     time_sleep = 0.1

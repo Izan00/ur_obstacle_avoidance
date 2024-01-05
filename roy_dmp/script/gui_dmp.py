@@ -668,7 +668,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         print('Executing plan')
         self.ui.avoidanceCheckBox.setEnabled(False)
         if self.avoidance_enabled :
-            #self.dmp_me.sendDmpToAvoidance(self.initial_JS,self.goal_JS,self.tau,self.dmp_param_dt)
             st = self.dmp_me.sendTrajectoryToAvoidance(self.path_plan,self.initial_JS)
             '''
             status = self.dmp_me.recieveExecutionStatus() # 0-stopped 1-running 2-success 3-failed
