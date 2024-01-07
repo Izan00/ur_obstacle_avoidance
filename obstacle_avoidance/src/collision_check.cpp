@@ -50,6 +50,9 @@ public:
         nh.param<double>("cartesain_dmp_K", cartesain_dmp_K, 100); 
         nh.param<double>("cartesain_dmp_D", cartesain_dmp_D, 2.0*pow(cartesain_dmp_K,0.5)); 
 
+        nh.param<double>("cartesain_dmp_scale_m", cartesain_dmp_scale_m, 0.0); 
+        nh.param<double>("cartesain_dmp_scale_n", cartesain_dmp_scale_n, 1.0); 
+
         nh.param<double>("cartesain_dmp_gamma_obs", cartesain_dmp_gamma_obs, 200.0); 
         nh.param<double>("cartesain_dmp_beta_obs", cartesain_dmp_beta_obs, 5.0); 
         nh.param<double>("cartesain_dmp_k_obs", cartesain_dmp_k_obs, 6.0); 
@@ -68,8 +71,7 @@ public:
         cartesain_dmp_k.push_back(cartesain_dmp_k_np);
         cartesain_dmp_k.push_back(cartesain_dmp_k_d);
 
-        nh.param<int>("cartesian_dmp_n_weights_per_dim", cartesian_dmp_n_weights_per_dim, 100);
-        nh.param<int>("cartesian_dmp_n_bases", cartesian_dmp_n_bases, 100);  
+        nh.param<int>("cartesian_dmp_n_bases", cartesian_dmp_n_bases, 50);  
         nh.param<double>("ik_jump_threshold_factor", ik_jump_threshold_factor, 0.05);
 
         nh.param<std::string>("cartesian_dmp_service_namespace", cartesian_dmp_service_namespace, "cartesian"); 
@@ -525,7 +527,8 @@ public:
                     //std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;                
                     
                     // Check if the collision is avoidable
-                    if(collision_link_name!=end_effector_collision_link){
+                    if(collision_link_name!=end_effector_collision_link || isGoalInsideMeshBoundingBox(collision_object_name,goal_effector_position))
+                    {
                         //Wait for object to clear path
                         std::cout<<"Unable to avoid collision with "<<collision_object_name<<", waiting until removed from currect position..."<<std::endl;
                         while(collision_distance>0 && collision_distance<collision_threshold)
@@ -542,29 +545,22 @@ public:
                     {
                         std::cout<<"Getting cartesian DMP..."<<std::endl;
                         std::vector<geometry_msgs::Pose> path;
-                        bool valid_plan = getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, cartesian_dmp_n_weights_per_dim, cartesain_dmp_gamma, cartesain_dmp_beta, cartesain_dmp_k, cartesian_dmp_dt, cartesain_dmp_K, cartesain_dmp_D);
-                        if(valid_plan)
-                        {
-                            //trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
-                            std::cout<<"Start time"<<trajectory_ptr->points[0].time_from_start<<std::endl;
-                            // TODO add custom validity check
-                            //sleep(5);
-                            current_point = 0;
-                            execution_time = trajectory_ptr->points.back().time_from_start.toSec() -  trajectory_ptr->points.front().time_from_start.toSec();
-                            goal_robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
-                                                        trajectory_ptr->points.back().positions);
-                            std::cout<<"New execution time: "<<execution_time<<std::endl;
-                            
-                            execution_start_time = std::chrono::high_resolution_clock::now();
-                        }  
-                        else
-                        {
-                            std::cout<<"Target point blocked"<<std::endl;
-                            robot_exectuion_status.data = 4;
-                            robot_execution_status_publisher.publish(robot_exectuion_status);
-                            move_group_ptr->stop();
-                            return;
-                        }
+             
+                        getCartesianDmpPlan(trajectory_ptr, current_point, collision_object_name, cartesain_dmp_gamma, cartesain_dmp_beta, cartesain_dmp_k, cartesian_dmp_dt, cartesain_dmp_K, cartesain_dmp_D, cartesain_dmp_scale_m, cartesain_dmp_scale_n);
+
+                        //trajectory_ptr =  boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
+                        std::cout<<"Start time"<<trajectory_ptr->points[0].time_from_start<<std::endl;
+                        // TODO add custom validity check
+                        //sleep(5);
+                        current_point = 0;
+                        execution_time = trajectory_ptr->points.back().time_from_start.toSec() -  trajectory_ptr->points.front().time_from_start.toSec();
+                        goal_robot_state.setJointGroupPositions(move_group_ptr->getRobotModel()->getJointModelGroup("manipulator"),
+                                                    trajectory_ptr->points.back().positions);
+                        std::cout<<"New execution time: "<<execution_time<<std::endl;
+                        
+                        execution_start_time = std::chrono::high_resolution_clock::now();
+                          
+                        
                     }
                     robot_exectuion_status.data = 2;
                     robot_execution_status_publisher.publish(robot_exectuion_status);
@@ -645,21 +641,28 @@ public:
         return std::vector<double> {centroid.x,centroid.y,centroid.z};
     };
 
-    bool isPointInsideMeshBoundingBox(const shape_msgs::Mesh& mesh ,const std::vector<double>& point) 
+    bool isGoalInsideMeshBoundingBox(const std::string collision_object_name,const Eigen::Vector3d& point) 
     {
+        moveit_msgs::CollisionObject collision_obj;
+        planning_scene_ptr->getCollisionObjectMsg (collision_obj, collision_object_name);
+        //std::cout<<collision_obj.pose<<std::endl; // 0 for meshes
+        shape_msgs::Mesh mesh = collision_obj.meshes[0];
+        
+        std::vector<double> obstacle;
+
         for (const auto& vertex : mesh.vertices) {
-            if (point[0] < vertex.x || point[0] > vertex.x ||
-                point[1] < vertex.y || point[1] > vertex.y ||
-                point[2] < vertex.z || point[2] > vertex.z) {
+            if (point.x() < vertex.x || point.x() > vertex.x ||
+                point.y() < vertex.y || point.y() > vertex.y ||
+                point.z() < vertex.z || point.z() > vertex.z) {
                 return false;
             }
         }
         return true;
     };
 
-    bool getCartesianDmpPlan(trajectory_msgs::JointTrajectory::Ptr& trajectory_ptr, int current_point, std::string collision_object_name,
-                             int n_weights_per_dim = 100, std::vector<double> gamma={200.0,500.0,15.0}, std::vector<double> beta={5.0,6.0}, std::vector<double> k={6.0,5.0,8.0},double dt=0.008, double K_gain=100.0, 
-                             double D_gain=2.0 * pow(100,0.5), double tau=5, double t_0 = 0, std::vector<double> initial_velocities = {}, 
+    void getCartesianDmpPlan(trajectory_msgs::JointTrajectory::Ptr& trajectory_ptr, int current_point, std::string collision_object_name,
+                             std::vector<double> gamma={200.0,500.0,15.0}, std::vector<double> beta={5.0,6.0}, std::vector<double> k={6.0,5.0,8.0},double dt=0.008, double K_gain=100.0, 
+                             double D_gain=2.0 * pow(100,0.5), double cartesain_dmp_scale_m=0.0, double cartesain_dmp_scale_n=1.0, double tau=5, double t_0 = 0, std::vector<double> initial_velocities = {}, 
                              double seg_length=-1, int integrate_iter=1, std::vector<double> goal_thresh = {})
     {
         robot_state::RobotState robot_state = *move_group_ptr->getCurrentState();
@@ -747,10 +750,6 @@ public:
         // Close the file
         pathOutputFile.close();
 
-        // Check if obstacle is blocking target point
-        if (isPointInsideMeshBoundingBox(mesh,demo_traj.points.back().positions))
-            return false;
-
         dmp::LearnDMPFromDemo::Request l_req;
         l_req.demo = demo_traj;
         l_req.k_gains=std::vector<double>(6,K_gain);
@@ -804,6 +803,8 @@ public:
         g_req.beta=beta;
         g_req.gamma=gamma;
         g_req.k=k;
+        g_req.scale_m=cartesain_dmp_scale_m;
+        g_req.scale_n=cartesain_dmp_scale_n;
         g_req.obstacle=obstacle;
         dmp::GetDMPPlan::Response g_res; 
         
@@ -865,7 +866,6 @@ public:
         
         trajectory_ptr = boost::make_shared<trajectory_msgs::JointTrajectory>(trajectory);
         //sleep(60);
-        return true;
     };
 
     Eigen::Quaterniond eulerZYXToQauternion(std::vector<double> euler_angles)
@@ -915,10 +915,11 @@ private:
     double cartesian_dmp_dt;
     double cartesain_dmp_K;
     double cartesain_dmp_D;
+    double cartesain_dmp_scale_m;
+    double cartesain_dmp_scale_n; 
     std::vector<double> cartesain_dmp_gamma;
     std::vector<double> cartesain_dmp_beta;
     std::vector<double> cartesain_dmp_k;
-    int cartesian_dmp_n_weights_per_dim;
     int cartesian_dmp_n_bases;
     double ik_jump_threshold_factor;
 };

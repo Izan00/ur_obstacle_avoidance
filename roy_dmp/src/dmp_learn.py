@@ -206,7 +206,7 @@ class motionGeneration():
         try:
             gdp = rospy.ServiceProxy('get_dmp_plan', GetDMPPlan)
             resp = gdp(x_0, x_dot_0, t_0, goal, goal_thresh,
-                        seg_length, tau, dt, integrate_iter, [],[],[],[])
+                        seg_length, tau, dt, integrate_iter, [],[],[],[],0.0,0.0)
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
         fin_time = time.time()

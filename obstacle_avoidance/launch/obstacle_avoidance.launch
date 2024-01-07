@@ -69,15 +69,21 @@
   </node>
   
   <!-- Collision avoidance node (detect collsions with object in the workspace an generate a collision avoding trajectory)-->
-  <param name="cartesain_dmp_gamma_obs" type="double" value="400.0"/>
-  <param name="cartesain_dmp_k_obs" type="double" value="0.0"/>
-  <param name="cartesain_dmp_beta_obs" type="double" value="5.0"/>
+  <param name="cartesian_dmp_dt" type="double" value="0.1"/>
+  <param name="cartesain_dmp_K" type="double" value="100"/>
+  
+  <param name="cartesain_dmp_scale_m" type="double" value="2.0"/>
+  <param name="cartesain_dmp_scale_n" type="double" value="0.4"/>
 
-  <param name="cartesain_dmp_gamma_np" type="double" value="200.0"/>
-  <param name="cartesain_dmp_k_np" type="double" value="6.0"/>
-  <param name="cartesain_dmp_beta_np" type="double" value="4.0"/>
+  <param name="cartesain_dmp_gamma_obs" type="double" value="200.0"/>
+  <param name="cartesain_dmp_beta_obs" type="double" value="4.0"/>
+  <param name="cartesain_dmp_k_obs" type="double" value="2.0"/>
 
-  <param name="cartesain_dmp_gamma_d" type="double" value="5.0"/>
+  <param name="cartesain_dmp_gamma_np" type="double" value="300.0"/>
+  <param name="cartesain_dmp_beta_np" type="double" value="2.5"/>
+  <param name="cartesain_dmp_k_np" type="double" value="4.0"/>
+
+  <param name="cartesain_dmp_gamma_d" type="double" value="30.0"/>
   <param name="cartesain_dmp_k_d" type="double" value="20.0"/>
 
   <node name="collision_check" pkg="obstacle_avoidance" type="collision_check" output="screen"/> 

@@ -187,16 +187,28 @@ def obstacle_avoidance_acceleration_2d_v4(
     
     scale=np.array(obstacle_box_size)*m+n
     cdd = cdd*scale
-
+    
     return np.squeeze(cdd), theta[0]
 
-if __name__ == "__main__":
-    eef_y = np.array([0.3,0.2])
-    eef_yd = np.array([0.077,0.289])
-    obstacle = np.array([0.7, 0.7])
-    obstacle_radius = 0.2
 
-    version = 1 #0,1,2,3,4
+
+if __name__ == "__main__":
+    obstacle = np.array([0.7, 0.7])
+
+    # V0-1
+    #eef_ys = [np.array([0.3,0.2]), np.array([0.54,0.5])]
+    #eef_yds = [np.array([-0.103,0.282]),np.array([0.077,0.289]),np.array([0.219,0.20])]
+
+    # V2
+    #eef_ys = [np.array([0.3,0.2])]
+    #eef_yds = [np.array([0.077,0.289])]
+    #obstacle_radius_list = [None,0.1,0.3]
+
+    # V3
+    eef_ys = [np.array([0.3,0.2])]
+    eef_yds = [np.array([-0.103,0.282])]
+    obstacle_radius_list = [0.3,0.3,0.3]
+
 
     x_range = 0, 1.0
     y_range = 0, 1.0
@@ -205,39 +217,55 @@ if __name__ == "__main__":
     markersize=15
     fontsize=20
 
-    ax = plt.subplot(1,1, 1, aspect="equal")
+    for k,eef_y in enumerate(eef_ys):
+        for i,eef_yd in enumerate(eef_yds):
+            for j,obstacle_radius in enumerate(obstacle_radius_list):
 
-    obstacle_box_size = [obstacle_radius*2,obstacle_radius*2]
-    intersec_point = find_intersection(obstacle, obstacle_radius, eef_y)
-    circle = plt.Circle(obstacle, obstacle_radius, color='tab:red', fill=True, alpha=0.5, label="Obstacle volume")
-    ax.add_patch(circle)
-    ax.plot(intersec_point[0], intersec_point[1], "o", color="tab:purple", markersize=markersize, label="Instersection point (m)")
+                #ax = plt.subplot(1, len(eef_yds), i+1, aspect="equal")
+                ax = plt.subplot(1, len(obstacle_radius_list), j+1, aspect="equal")
 
-    if version==0:
-        ct, theta = obstacle_avoidance_acceleration_2d_v0(eef_y, eef_yd, obstacle, gamma=10.0, beta=20.0 / math.pi) 
-    elif version==1:
-        ct, theta = obstacle_avoidance_acceleration_2d_v1(eef_y, eef_yd, obstacle, gamma=10.0, beta=10.0 / math.pi, k=5.0 / math.pi)
-    elif version==2: 
-        ct, theta = obstacle_avoidance_acceleration_2d_v2(eef_y, eef_yd, obstacle, intersec_point, gamma=[5.0,15.0], beta=[10.0/math.pi,10.0/math.pi], k=[5.0/math.pi,10.0/math.pi])
-    elif version==3:
-        ct, theta = obstacle_avoidance_acceleration_2d_v3(eef_y, eef_yd, obstacle, intersec_point, gamma=[5.0,15.0,2.0], beta=[10.0/math.pi,10.0/math.pi], k=[5.0/math.pi,10.0/math.pi,20.0/math.pi])
-    elif version==4:
-        ct, theta = obstacle_avoidance_acceleration_2d_v4(eef_y, eef_yd, obstacle, intersec_point, obstacle_box_size, gamma=[5.0,15.0,2.0], beta=[10.0/math.pi,10.0/math.pi], k=[5.0/math.pi,10.0/math.pi,20.0/math.pi], m=1.5, n=0.4)
+                try:
+                    obstacle_box_size = [obstacle_radius*2,obstacle_radius*2]
+                    intersec_point = find_intersection(obstacle, obstacle_radius, eef_y)
+                    circle = plt.Circle(obstacle, obstacle_radius, color='tab:red', fill=True, alpha=0.5, label="Obstacle volume")
+                    ax.add_patch(circle)
+                    ax.plot(intersec_point[0], intersec_point[1], "o", color="tab:purple", markersize=markersize, label="Instersection point (m)")
+                    if j==0:
+                        ct, theta = obstacle_avoidance_acceleration_2d_v1(eef_y, eef_yd, obstacle, gamma=10.0, beta=10.0 / math.pi, k=5.0 / math.pi)
+                    elif j==1: 
+                        ct, theta = obstacle_avoidance_acceleration_2d_v2(eef_y, eef_yd, obstacle, intersec_point, gamma=[5.0,15.0], beta=[10.0/math.pi,10.0/math.pi], k=[5.0/math.pi,10.0/math.pi])
+                    elif j==2:
+                        ct, theta = obstacle_avoidance_acceleration_2d_v3(eef_y, eef_yd, obstacle, intersec_point, gamma=[5.0,15.0,2.0], beta=[10.0/math.pi,10.0/math.pi], k=[5.0/math.pi,10.0/math.pi,20.0/math.pi])
+                    #elif j==3:
+                    #    ct, theta = obstacle_avoidance_acceleration_2d_v4(eef_y, eef_yd, obstacle, intersec_point, obstacle_box_size, gamma=[5.0,15.0,2.0], beta=[10.0/math.pi,10.0/math.pi], k=[5.0/math.pi,10.0/math.pi,20.0/math.pi], m=1.5, n=0.4)
                     
-    ax.plot([obstacle[0],eef_y[0]], [obstacle[1],eef_y[1]], color="black", linewidth=3)
-    ax.plot(obstacle[0], obstacle[1], "o", color="tab:red", markersize=markersize, label="Obstacle position (m)")
-    ax.plot(eef_y[0], eef_y[1], "o", color="tab:blue", markersize=markersize, label="End-effector position (m)")
-    ax.quiver(eef_y[0], eef_y[1], eef_yd[0], eef_yd[1], angles='xy', scale_units='xy', scale=1, width=0.01, color='tab:green', label="End-effector velocity (m/s)")
-    ax.quiver(eef_y[0], eef_y[1], ct[0], ct[1], angles='xy', scale_units='xy', scale=1, width=0.01, color='tab:orange', label="Coupling acceleration (m/s²)")
+                except:
+                    #ct, theta = obstacle_avoidance_acceleration_2d_v0(eef_y, eef_yd, obstacle, gamma=10.0, beta=20.0 / math.pi)
+                    ct, theta = obstacle_avoidance_acceleration_2d_v1(eef_y, eef_yd, obstacle, gamma=10.0, beta=10.0 / math.pi, k=5.0 / math.pi)
+                                
+                ax.plot([obstacle[0],eef_y[0]], [obstacle[1],eef_y[1]], color="black", linewidth=3)
+                ax.plot(obstacle[0], obstacle[1], "o", color="tab:red", markersize=markersize, label="Obstacle position (m)")
+                ax.plot(eef_y[0], eef_y[1], "o", color="tab:blue", markersize=markersize, label="End-effector position (m)")
+                ax.quiver(eef_y[0], eef_y[1], eef_yd[0], eef_yd[1], angles='xy', scale_units='xy', scale=1, width=0.01, color='tab:green', label="End-effector velocity (m/s)")
+                ax.quiver(eef_y[0], eef_y[1], ct[0], ct[1], angles='xy', scale_units='xy', scale=1, width=0.01, color='tab:orange', label="Coupling acceleration (m/s²)")
 
-    ax.set_title('DMP + APF v'+str(version), fontsize=fontsize)
+                #ax.set_title(r'$\varphi=$'+'{0:.3f} rad'.format(theta),fontsize=fontsize)
+                #ax.set_title('Obstacle radius='+str(obstacle_radius),fontsize=fontsize)
+                ax.set_title(['Angle with centroid distance','Angle with centroid distance +\n Angle with Nearest point', 'Angle with centroid distance +\n Angle with Nearest point +\n  Nearest point'][j],fontsize=fontsize)
 
-    ax.tick_params(labelsize=fontsize*0.75)
-    ax.set_xlim(x_range)
-    ax.set_ylim(y_range)
-    ax.set_xlabel("X",fontsize=fontsize)
-    ax.set_ylabel("Y",fontsize=fontsize)
-    ax.legend(fontsize=fontsize*0.75, loc='center left', bbox_to_anchor=(1, 0.5))
+                ax.tick_params(labelsize=fontsize*0.75)
+                ax.set_xlim(x_range)
+                ax.set_ylim(y_range)
+                ax.set_xlabel("X",fontsize=fontsize)
+                ax.set_ylabel("Y",fontsize=fontsize)
+
+                if i == 0 and k==0 and j==0:
+                    handles, labels = ax.get_legend_handles_labels()
+
+    fig.suptitle("Potential field coupling term",fontsize=fontsize*1.2)
+    #ax.legend(fontsize=fontsize*0.75, loc='center left',bbox_to_anchor=(1, 0.5))
+    fig.legend(handles, labels, loc='lower center', ncol=7, fontsize="15")
     fig.tight_layout()
+    fig.subplots_adjust(wspace=0.3, hspace=0.3)
 
     plt.show()
