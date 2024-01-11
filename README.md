@@ -2,38 +2,44 @@
 ## Implementation and evaluation of an obstacle avoidance system in a collaborative robot
 
 ### Introduction
+This work extends the work from [Roy Eriksen](https://github.com/eriksenroy/roy_dmp.git), by adding real-time workspace feedback for collision check and end-effector obstacle avoidance capabilities.
 
+The code uses Dynamic Movement Primitives (DMPs) in combination with Artificial Potential Fields (APFs) to generate an abostacle avoiding trajectory while following a demo trajectory.
+
+The code is created to work with the UR CB-series robots family and an Intel Realsense D345 depth camera. And it has been tested with the UR3 robot.
 
 ### Setup
 #### Workspace setup
-Create a workspace (if needed):
+To create an execution environment:
 
-  `mkdir -p <WORKSPACE_NAME>`
+1. Create a workspace (if needed):
 
-  `cd <WORKSPACE_NAME>`
+    `mkdir -p <WORKSPACE_NAME>`
 
-Clone the repository:
+    `cd <WORKSPACE_NAME>`
 
-  `git clone --recursive https://github.com/Izan00/ur_obstacle_avoidance.git src/`
+2. Clone the repository:
 
-Install the needed dependencies:
+    `git clone --recursive https://github.com/Izan00/ur_obstacle_avoidance.git src/`
 
-  `chmod +x src/run.sh`
+3. Install the needed dependencies:
+
+    `chmod +x src/run.sh`
   
-  `./src/run.sh`
+    `./src/run.sh`
 
-Compile and soruce the workspace
+4. Compile and soruce the workspace
 
-  `catkin_make`
+    `catkin_make`
 
-  `source devel/setup.bash`
+    `source devel/setup.bash`
 
 #### Robot setup
-Cenerate the robot calibration file with: 
+Generate the robot calibration file with: 
 
   `roslaunch ur_calibration calibration_correction.launch robot_ip:=<IP> target_filename:="${HOME}/ur_ws/my_robot_calibration.yaml"`
 
-  See: `https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_calibration/README.md`
+  See: [ur_calibration](https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_calibration/README.md) for more details.
 
 Install the URCap dirver in the robot using the pendant:
 
@@ -45,65 +51,91 @@ Install the URCap dirver in the robot using the pendant:
 
   Note: Set port to 50002 and the IP from the HOST PC
   
-  Note: Program file needs to be saved a running for the robot to work
+  Note: Program file needs to be saved and running for the robot to work
 
 ### Execution
+To run the application, follow the steps:
+
+1. Start ROS core:
+   
+    `roscore`
+
+2. Launch the GUI for DMP:
+
+    `python3 src/roy_dmp/script/gui_dmp.py`
+
+    * Set the robot IP or enable the simulation checkbox.
+    * Click the **Connect to Robot** button. Once connected, the button text will turn green, and the **Start DMP application** button will activate.
+
+3. Begin the DMP application:
+
+    Click the **Start DMP application** button.
+
+4. Execution with obstacle avoidance:
+    * Navigate to the execute window in the GUI.
+    * Select the desired demo DMP, start and target pose. Note: the start pose must be the same as the robot current pose.
+    * Activate the real-time obstacle avoidance checkbox.
+    * Click the **Generate plan** button.
+    * Run the URCap program with the robot pendant.
+    * Start the application by clicking the **Execute plan** button.
+
+
+For a detailed explanation of the DMP application execution, can be found in the following [report](https://upcommons.upc.edu/bitstream/handle/2117/340118/tfm-roy-eriksen.pdf?sequence=1).
+
 
 
 ### Work status
-- [x] Reproduce Roy work
+- [x] Reproduce Roy's work
   - [x] Simulations
   - [x] Real-life
-- [x] Add Intel Realsense 345i camera
+  
+- [x] Add Intel Realsense D345 depth camera
   - [x] Implementations 
     - [x] Simulator 
     - [x] Real-life test
   - [x] Location
     - [x] Fixed external
     - [x] Tool
-- [ ] Obstacle tracking
-  - [x] Obstacle definition
-  - [ ] Tracking methods 
+  
+- [x] Feedback mechanism
+  - [x] Object detection 
     - [x] PointCloud
-      - [ ] DBSCAN Clustering / Segmentation + Matching
-      - [x] DBSCAN Clustering / Segmentation + Mesh creation
+      - [x] DBSCAN Clustering (removed)
+      - [x] Euclidean Clustering
     - [ ] Color camera reprojection
       - [ ] Traditional CV methods
       - [ ] NN methods
     - [ ] Color camera + Pointcloud matching  
       - [ ] Traditional CV methods
       - [ ] NN methods
-- [ ] Collision check
+  - [x] Object virtualization
+    - [ ] Bounding box
+    - [ ] Image
+    - [x] Mesh
+  
+- [x] Collision check
   - [x] URFD (Moveit)
   - [x] Planing scene
-  - [ ] Path intersection  
-
-
-- [ ] Obstacle avoidance stages
-  - [ ] Collsion 
+  - [x] Path intersection  
+  - [x] Collsion distance
+   
+- [x] Obstacle avoidance stages
+  - [x] Collsion handling
     - [x] Object movement check (stop at any movement)
-      or 
-    - [ ] Real-time planing scene collision (ignore movemetn that not interferes)
+    - [x] Real-time planing scene collision (ignore movemetn that not interferes)
   - [x] Safe stop
-  - [ ] Path recomputation
-  - [ ] Real-time implementation
+  - [x] Path recomputation
+    - [x] DMP + APF
+    - [ ] DMP + APF + RL
+  - [x] Real-time response
+  - [x] Implementations 
+    - [x] Simulator 
+    - [x] Real-life test
 
 - [ ] Optimizations
   - [x] Reduce pointcloud density
   - [x] Filter ground/workare outside 
   - [ ] Limit realtime collision check horizon 
+  - [ ] Integrate the Avoidance parameters in the GUI
 
-Links to Study:
-
-- 3D bounding box projection
-	* https://github.com/IntelligentRoboticsLabs/gb_visual_detection_3d
-
-- DPMs w/obstacle avoidance
-	* https://github.com/mathiasesn/obstacle_avoidance_with_dmps
-
-- RL for obstacle avoidance
-
-	* https://www.mdpi.com/2076-3417/12/13/6629
-	* https://towardsdatascience.com/training-of-robotic-manipulators-on-the-obstacle-avoidance-task-through-reinforcement-learning-ea2a3404883f
-	* https://arxiv.org/pdf/2301.05980.pdf
 
