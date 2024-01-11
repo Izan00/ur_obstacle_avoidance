@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name='sim' value='True'/>
-
   <env name="GAZEBO_MODEL_PATH" value="$(find obstacle_avoidance)/models:$(optenv GAZEBO_MODEL_PATH)"/>
   <env name="GAZEBO_MEDIA_PATH" value="$(find obstacle_avoidance)/models:$(optenv GAZEBO_MEDIA_PATH)"/>
 
@@ -11,7 +9,7 @@
   <node pkg="nodelet" type="nodelet" name="voxel_grid_nodelet" args="load pcl/VoxelGrid pcl_manager_nodelet" output="screen">
     <remap from="~input" to="/camera/depth/color/points" />
     <remap from="~output" to="/camera/depth/color/points_sampled" />
-    <param name="leaf_size" type="double" value="0.02" />
+    <param name="leaf_size" type="double" value="0.03" />
     <param name="filter_limit_min" type="double" value="0.0" />
     <param name="filter_limit_max" type="double" value="100" />
   </node>
@@ -40,8 +38,8 @@
   <node name="collision_volume_reconstruction_node" pkg="obstacle_avoidance" type="collision_volume_reconstruction" output="screen"> 
     <param name="min_cluster_size" type="int" value="1"/>
     <param name="max_samples" type="int" value="25000"/>
-    <param name="cluster_tolerance" type="double" value="0.05"/>
-    <param name="cluster_size_th" type="int" value="50"/>
+    <param name="cluster_tolerance" type="double" value="0.04"/>
+    <param name="cluster_size_th" type="int" value="30"/>
     <param name="save_input_cloud" type="bool" value="true"/>
     <param name="save_cluster_cloud" type="bool" value="true"/>
     <param name="save_mesh" type="bool" value="true"/>
@@ -69,6 +67,19 @@
   </node>
   
   <!-- Collision avoidance node (detect collsions with object in the workspace an generate a collision avoding trajectory)-->
+  <param name="collision_threshold" type="double" value="0.25"/>
+  <param name="goal_threshold" type="double" value="0.03"/>
+  <param name="collision_check_sampling" type="double" value="0.02"/>
+
+  <param name="end_effector_link" type="string" value="rg2_eef_link"/>
+  <param name="end_effector_collision_link" type="string" value="rg2_body_link"/>
+  
+
+  <param name="ik_jump_threshold_factor" type="double" value="0.05"/>
+
+  <param name="cartesian_dmp_service_namespace" type="string" value="cartesian"/>
+
+  <param name="cartesian_dmp_n_bases" type="int" value="50"/>        
   <param name="cartesian_dmp_dt" type="double" value="0.1"/>
   <param name="cartesain_dmp_K" type="double" value="100"/>
   

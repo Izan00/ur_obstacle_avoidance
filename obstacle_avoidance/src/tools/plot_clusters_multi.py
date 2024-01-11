@@ -8,7 +8,8 @@ if __name__ == "__main__":
 
     cloud = pcl.load('/home/izan/.ros/input_cloud.pcd')
 
-    cluster_tolerance_list = [0.01, 0.02, 0.03 ,0.05]
+    
+    cluster_tolerance_list = [0.02, 0.03, 0.04 ,0.05]
     min_cluster_size = 1
     max_cluster_size = 25000
     cluster_size_th = 50

@@ -43,6 +43,8 @@ public:
 
         nh.param<double>("collision_threshold", collision_threshold, 0.25); //Set the collisin check horizont distance in m
         nh.param<double>("goal_threshold", goal_threshold, 0.03); // Joints L2 norm in m
+        nh.param<double>("collision_check_sampling", collision_check_sampling, 0.02);
+
 
         nh.param<double>("cartesian_dmp_speed_scale", cartesian_dmp_speed_scale, 1.0); 
         nh.param<double>("cartesian_dmp_dt", cartesian_dmp_dt, 0.01); 
@@ -128,6 +130,10 @@ public:
         double collision_distance = -1;
         Eigen::Vector3d e_collision_point;
 
+        Eigen::Vector3d prev_end_effector_position;
+
+        double distance = 0;
+        int total_checked = 0;
         for (int i=path_start;i<trajectory_points.size();i++)
         {
             // Set the robot state to the current trajectory point
@@ -137,81 +143,95 @@ public:
             // Update the Planning Scene with the current robot state
             planning_scene_ptr->setCurrentState(robot_state);
 
-            // Collision checking
-            // Clear previous collision responses
-            collision_result.clear();
-            planning_scene_ptr->checkCollision(collision_request, collision_result);
+            if (i==path_start){
+                const Eigen::Isometry3d& initial_end_effector_pose = robot_state.getGlobalLinkTransform(end_effector_link);
+                prev_end_effector_position = initial_end_effector_pose.translation();
+            }
+            const Eigen::Isometry3d& end_effector_pose = robot_state.getGlobalLinkTransform(end_effector_link);
+            distance = (end_effector_pose.translation() - prev_end_effector_position).norm();
+            //std::cout<<"Check dist: " <<distance<<std::endl;
+            if (distance > collision_check_sampling){
+                total_checked++;
+                //std::cout<<"Point: " <<i <<" Checked: "<<total_checked<<"/"<<trajectory_points.size()-path_start<<std::endl;
+                prev_end_effector_position = end_effector_pose.translation();
+                // Collision checking
+                // Clear previous collision responses
+                collision_result.clear();
+                planning_scene_ptr->checkCollision(collision_request, collision_result);
 
-            // If collision occurs
-            if (collision_result.collision) 
-            {
-                //std::cout<<i<<std::endl;
-                planning_scene_ptr->getCollidingPairs(contacts);
-                for (const auto& contact : contacts) {
-                    const std::string& object1 = contact.first.first;
-                    const std::string& object2 = contact.first.second;
-                    //std::cout<<"Collision between: " << object1 << " and " << object2<<std::endl;
-                    if(object1.find("collision_cluster_") != std::string::npos || object1.find("collision_cluster_") != std::string::npos)
-                    //if(object1==end_effector_collision_link || object2==end_effector_collision_link)
-                    {
-                        // Print collision points
-                        for (const auto& contact_point : contact.second) {
-                            const Eigen::Vector3d& point = contact_point.pos;
-                            //std::cout<<"Collision point (collison state, base_link frame): " << point.x() << ", " << point.y() << ", " << point.z()<<std::endl;
+                // If collision occurs
+                if (collision_result.collision) 
+                {
+                    //std::cout<<i<<std::endl;
+                    planning_scene_ptr->getCollidingPairs(contacts);
+                    for (const auto& contact : contacts) {
+                        const std::string& object1 = contact.first.first;
+                        const std::string& object2 = contact.first.second;
+                        //std::cout<<"Collision between: " << object1 << " and " << object2<<std::endl;
+                        if(object1.find("collision_cluster_") != std::string::npos || object1.find("collision_cluster_") != std::string::npos)
+                        //if(object1==end_effector_collision_link || object2==end_effector_collision_link)
+                        {
+                            // Print collision points
+                            for (const auto& contact_point : contact.second) {
+                                const Eigen::Vector3d& point = contact_point.pos;
+                                //std::cout<<"Collision point (collison state, base_link frame): " << point.x() << ", " << point.y() << ", " << point.z()<<std::endl;
 
-                            // Get the global transform of a reference link in the source state
-                            Eigen::Affine3d source_transform = robot_state.getGlobalLinkTransform(end_effector_collision_link);
+                                // Get the global transform of a reference link in the source state
+                                Eigen::Affine3d source_transform = robot_state.getGlobalLinkTransform(end_effector_collision_link);
 
-                            // Transform the point from the source state to the reference link frame
-                            Eigen::Vector3d transformed_point = source_transform.inverse() * point;
-                            //std::cout<<"Collision point (collison state, link frame): " << transformed_point.x() << ", " << transformed_point.y() << ", " << transformed_point.z()<<std::endl;
+                                // Transform the point from the source state to the reference link frame
+                                Eigen::Vector3d transformed_point = source_transform.inverse() * point;
+                                //std::cout<<"Collision point (collison state, link frame): " << transformed_point.x() << ", " << transformed_point.y() << ", " << transformed_point.z()<<std::endl;
 
-                            // Get the global transform of the reference link in the target state
-                            robot_state = *move_group_ptr->getCurrentState();
-                            Eigen::Affine3d target_transform = robot_state.getGlobalLinkTransform(end_effector_collision_link);
+                                // Get the global transform of the reference link in the target state
+                                robot_state = *move_group_ptr->getCurrentState();
+                                Eigen::Affine3d target_transform = robot_state.getGlobalLinkTransform(end_effector_collision_link);
 
-                            // Transform the point from the reference link frame to the target state
-                            transformed_point = target_transform * transformed_point;
-                            //std::cout<<"Collision point (curent state, base_link frame): " << transformed_point.x() << ", " << transformed_point.y() << ", " << transformed_point.z()<<std::endl;
-                            double new_distance = (transformed_point - point).norm();
-                            if(collision_distance>new_distance || collision_distance<0)
-                            {   
-                                collision_distance = new_distance;
-                                e_collision_point = point;
+                                // Transform the point from the reference link frame to the target state
+                                transformed_point = target_transform * transformed_point;
+                                //std::cout<<"Collision point (curent state, base_link frame): " << transformed_point.x() << ", " << transformed_point.y() << ", " << transformed_point.z()<<std::endl;
+                                double new_distance = (transformed_point - point).norm();
+                                if(collision_distance>new_distance || collision_distance<0)
+                                {   
+                                    collision_distance = new_distance;
+                                    e_collision_point = point;
+                                }
                             }
+                            //std::cout<<"Collision_distance: "<< collision_distance<<std::endl;
+                            // Stop the timer
+                            auto end_time = std::chrono::high_resolution_clock::now();
+                            // Calculate the duration
+                            double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
+                            // Print the duration
+                            //std::cout <<"Execution time: "<<duration << std::endl;
+                            
+                            if(object1.find("collision_cluster_") != std::string::npos)
+                            {
+                                collision_object = object1;
+                                collision_link = object2;
+                            }
+                            else
+                            {
+                                collision_object = object2;
+                                collision_link = object1;
+                            }
+                            collision_point = std::vector<double>{e_collision_point.x(),e_collision_point.y(),e_collision_point.z()};
+                            return collision_distance;
+                            //return false;
                         }
-                        //std::cout<<"Collision_distance: "<< collision_distance<<std::endl;
-                        // Stop the timer
-                        auto end_time = std::chrono::high_resolution_clock::now();
-                        // Calculate the duration
-                        double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
-                        // Print the duration
-                        //std::cout <<"Execution time: "<<duration << std::endl;
-                        
-                        if(object1.find("collision_cluster_") != std::string::npos)
-                        {
-                            collision_object = object1;
-                            collision_link = object2;
-                        }
-                        else
-                        {
-                            collision_object = object2;
-                            collision_link = object1;
-                        }
-                        collision_point = std::vector<double>{e_collision_point.x(),e_collision_point.y(),e_collision_point.z()};
-                        return collision_distance;
-                        //return false;
                     }
                 }
             }
         }
+        //std::cout<<"Checked: "<<total_checked<<"/"<<trajectory_points.size()-path_start<<std::endl;
+                
 
          // Stop the timer
         auto end_time = std::chrono::high_resolution_clock::now();
         // Calculate the duration
         double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
         // Print the duration
-        //std::cout <<"Execution time: "<<duration<< std::endl;
+        //std::cout <<"Collision check execution time: "<<duration<< std::endl;
 
         // If no collisions occurred in any trajectory point, the path is valid
         return collision_distance;
@@ -494,19 +514,14 @@ public:
                 move_group_ptr->stop();
                 return;
             }
-            auto start_time = std::chrono::high_resolution_clock::now();
+            //auto start_time = std::chrono::high_resolution_clock::now();
             current_point = getCurrentTrajectoryPoint(trajectory_ptr, current_point);
-            auto end_time = std::chrono::high_resolution_clock::now();
-            double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
-            std::cout<<"Trajectory loc execution time: "<<duration<< std::endl;
+            //auto end_time = std::chrono::high_resolution_clock::now();
+            //double duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
+            //std::cout<<"Trajectory loc execution time: "<<duration<< std::endl;
 
-
-            start_time = std::chrono::high_resolution_clock::now();
             collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_link_name, collision_point, current_point);        
-            end_time = std::chrono::high_resolution_clock::now();
-            duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count()/1000.0;
-            std::cout<<"Collision check execution time: "<<duration<< std::endl;
-
+           
             //std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;
             if(debug)
                 std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<" - Duration: "<<execution_duration<<" -  Goal dist: "<<goal_dist<<std::endl;
@@ -521,7 +536,7 @@ public:
 					auto stop_start_time = std::chrono::high_resolution_clock::now();
 					robot_exectuion_status.data = 1;
 					robot_execution_status_publisher.publish(robot_exectuion_status);
-					sleep(5);
+					sleep(5); // Compensate stop delay
 					current_point = getCurrentTrajectoryPoint(trajectory_ptr,current_point);
 					collision_distance = getCollisionDistance(trajectory_ptr->points, collision_object_name, collision_link_name,collision_point,current_point);            
                     //std::cout<<"Current point: "<<current_point<<"/"<<trajectory_ptr->points.size()<<" - Collision dist: "<<collision_distance<<std::endl;                
@@ -901,6 +916,7 @@ private:
 
     double collision_threshold;
     double goal_threshold;
+    double collision_check_sampling;
 
     std::string end_effector_link;
     std::string end_effector_collision_link;
