@@ -1,15 +1,16 @@
-# TFM
-## Implementation and evaluation of an obstacle avoidance system in a collaborative robot
+# Final Master's Thesis: Implementation and evaluation of an obstacle avoidance system in a collaborative robot
 
-### Introduction
-This work extends the work from [Roy Eriksen](https://github.com/eriksenroy/roy_dmp.git), by adding real-time workspace feedback for collision check and end-effector obstacle avoidance capabilities.
+## Introduction
+This work extends the work from [Roy Eriksen](https://github.com/eriksenroy/roy_dmp.git) by adding realtime workspace feedback for collision check and end-effector obstacle avoidance capabilities.
 
-The code uses Dynamic Movement Primitives (DMPs) in combination with Artificial Potential Fields (APFs) to generate an abostacle avoiding trajectory while following a demo trajectory.
+The code uses Dynamic Movement Primitives (DMPs) and Artificial Potential Fields (APFs) to generate an obstacle-avoiding trajectory while following a demo trajectory.
 
-The code is created to work with the UR CB-series robots family and an Intel Realsense D345 depth camera. And it has been tested with the UR3 robot.
+The code is created to work with the UR CB-series robots family and an Intel Realsense D345 depth camera. 
 
-### Setup
-#### Workspace setup
+It has been tested with a real UR3 robot.
+
+## Setup
+### Workspace setup
 To create an execution environment:
 
 1. Create a workspace (if needed):
@@ -28,20 +29,20 @@ To create an execution environment:
   
     `./src/run.sh`
 
-4. Compile and soruce the workspace
+4. Compile and source the workspace
 
     `catkin_make`
 
     `source devel/setup.bash`
 
-#### Robot setup
-Generate the robot calibration file with: 
+### Robot setup
+Generate the robot calibration file with the following: 
 
   `roslaunch ur_calibration calibration_correction.launch robot_ip:=<IP> target_filename:="${HOME}/ur_ws/my_robot_calibration.yaml"`
 
   See: [ur_calibration](https://github.com/UniversalRobots/Universal_Robots_ROS_Driver/blob/master/ur_calibration/README.md) for more details.
 
-Install the URCap dirver in the robot using the pendant:
+Install the URCap driver in the robot using the pendant:
 
 * URCap file can be found [here](https://github.com/UniversalRobots/Universal_Robots_ExternalControl_URCap/releases)
 
@@ -51,9 +52,9 @@ Install the URCap dirver in the robot using the pendant:
 
   Note: Set port to 50002 and the IP from the HOST PC
   
-  Note: Program file needs to be saved and running for the robot to work
+  Note: The program file needs to be saved and running for the robot to work
 
-### Execution
+## Execution
 To run the application, follow the steps:
 
 1. Start ROS core:
@@ -73,18 +74,18 @@ To run the application, follow the steps:
 
 4. Execution with obstacle avoidance:
     * Navigate to the execute window in the GUI.
-    * Select the desired demo DMP, start and target pose. Note: the start pose must be the same as the robot current pose.
-    * Activate the real-time obstacle avoidance checkbox.
+    * Select the desired demo DMP, start posse, and target pose. Note: The start pose must be the same as the robot's current pose.
+    * Activate the realtime obstacle avoidance checkbox.
     * Click the **Generate plan** button.
     * Run the URCap program with the robot pendant.
     * Start the application by clicking the **Execute plan** button.
 
 
-For a detailed explanation of the DMP application execution, can be found in the following [report](https://upcommons.upc.edu/bitstream/handle/2117/340118/tfm-roy-eriksen.pdf?sequence=1).
+A detailed explanation of the DMP application execution can be found in the following [report](https://upcommons.upc.edu/bitstream/handle/2117/340118/tfm-roy-eriksen.pdf?sequence=1).
 
 
 
-### Work status
+## Work status
 - [x] Reproduce Roy's work
   - [x] Simulations
   - [x] Real-life
@@ -120,21 +121,21 @@ For a detailed explanation of the DMP application execution, can be found in the
   - [x] Collsion distance
    
 - [x] Obstacle avoidance stages
-  - [x] Collsion handling
+  - [x] Collision handling
     - [x] Object movement check (stop at any movement)
-    - [x] Real-time planing scene collision (ignore movemetn that not interferes)
+    - [x] Realtime planing scene collision (ignore movement that does not interfere)
   - [x] Safe stop
   - [x] Path recomputation
     - [x] DMP + APF
     - [ ] DMP + APF + RL
-  - [x] Real-time response
+  - [x] Realtime response
   - [x] Implementations 
     - [x] Simulator 
     - [x] Real-life test
 
 - [ ] Optimizations
-  - [x] Reduce pointcloud density
-  - [x] Filter ground/workare outside 
+  - [x] Reduce point-cloud density
+  - [x] Filter ground/workspace outside 
   - [ ] Limit realtime collision check horizon 
   - [ ] Integrate the Avoidance parameters in the GUI
 
