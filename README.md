@@ -1,6 +1,5 @@
 # Final Master's Thesis: Implementation and evaluation of an obstacle avoidance system in a collaborative robot
 
-## Introduction
 This work extends the work from [Roy Eriksen](https://github.com/eriksenroy/roy_dmp.git) by adding realtime workspace feedback for collision check and end-effector obstacle avoidance capabilities.
 
 The code uses Dynamic Movement Primitives (DMPs) and Artificial Potential Fields (APFs) to generate an obstacle-avoiding trajectory while following a demo trajectory.
@@ -8,6 +7,13 @@ The code uses Dynamic Movement Primitives (DMPs) and Artificial Potential Fields
 The code is created to work with the UR CB-series robots family and an Intel Realsense D345 depth camera. 
 
 It has been tested with a real UR3 robot.
+
+## Content
+* [Setup](#setup)
+* [Execution](#execution)
+* [Work status](#work-status)
+* [Report](#report)
+
 
 ## Setup
 ### Workspace setup
@@ -139,4 +145,5 @@ A detailed explanation of the DMP application execution can be found in the foll
   - [ ] Limit realtime collision check horizon 
   - [ ] Integrate the Avoidance parameters in the GUI
 
-
+## Report
+The [thesis](TFM__Implementation_and_evaluation_of_an_obstacle_avoidance_system_in_a_collaborative_robot_compressed.pdf) of this work can be found in the repository root folder.
